@@ -3,8 +3,8 @@ package com.vogu.slapingmonitor.service
 import com.vogu.slapingmonitor.api.AlertEventRequest
 import com.vogu.slapingmonitor.domain.AlertEventEntity
 import com.vogu.slapingmonitor.repository.AlertEventRepository
-import org.springframework.stereotype.Service
 import java.util.UUID
+import org.springframework.stereotype.Service
 
 @Service
 class AlertEventService(

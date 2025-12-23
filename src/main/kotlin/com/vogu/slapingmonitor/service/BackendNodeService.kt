@@ -3,8 +3,8 @@ package com.vogu.slapingmonitor.service
 import com.vogu.slapingmonitor.api.NodeHeartbeatRequest
 import com.vogu.slapingmonitor.domain.BackendNodeEntity
 import com.vogu.slapingmonitor.repository.BackendNodeRepository
-import org.springframework.stereotype.Service
 import java.time.Instant
+import org.springframework.stereotype.Service
 
 @Service
 class BackendNodeService(
