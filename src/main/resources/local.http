@@ -1,0 +1,145 @@
+@baseUrl = http://localhost:8080
+@endpointId = 00000000-0000-0000-0000-000000000001
+@alertRuleId = 00000000-0000-0000-0000-000000000010
+@alertEventId = 00000000-0000-0000-0000-000000000020
+@nodeId = node-1
+
+### Создать endpoint
+POST {{baseUrl}}/api/endpoints
+Content-Type: application/json
+
+{
+  "name": "Homepage",
+  "url": "https://example.com",
+  "method": "GET",
+  "headers": {
+    "User-Agent": "SLA-Ping-Monitor"
+  },
+  "timeoutMs": 3000,
+  "expectedStatus": [200, 399],
+  "intervalSec": 60,
+  "enabled": true,
+  "tags": ["public", "homepage"]
+}
+
+### Список endpoints
+GET {{baseUrl}}/api/endpoints
+
+### Получить endpoint по id
+GET {{baseUrl}}/api/endpoints/{{endpointId}}
+
+### Обновить endpoint
+PUT {{baseUrl}}/api/endpoints/{{endpointId}}
+Content-Type: application/json
+
+{
+  "name": "Homepage",
+  "url": "https://example.com/health",
+  "method": "GET",
+  "timeoutMs": 2500,
+  "expectedStatus": [200, 399],
+  "intervalSec": 30,
+  "enabled": true,
+  "tags": ["public", "health"]
+}
+
+### Удалить endpoint
+DELETE {{baseUrl}}/api/endpoints/{{endpointId}}
+
+### Статистика endpoint за окно
+GET {{baseUrl}}/api/endpoints/{{endpointId}}/stats?windowSec=900
+
+### Результаты проверок endpoint за интервал
+GET {{baseUrl}}/api/endpoints/{{endpointId}}/checks?from=2024-01-01T00:00:00Z&to=2024-01-01T01:00:00Z
+
+### Сводка по endpoints
+GET {{baseUrl}}/api/endpoints/summary?windowSec=900
+
+### Создать правило алерта
+POST {{baseUrl}}/api/alert-rules
+Content-Type: application/json
+
+{
+  "endpointId": "{{endpointId}}",
+  "type": "P95_LATENCY",
+  "threshold": 1000,
+  "windowSec": 900,
+  "triggerForSec": 60,
+  "cooldownSec": 300,
+  "hysteresisRatio": 0.8,
+  "enabled": true
+}
+
+### Список правил алертов
+GET {{baseUrl}}/api/alert-rules?endpointId={{endpointId}}
+
+### Обновить правило алерта
+PUT {{baseUrl}}/api/alert-rules/{{alertRuleId}}
+Content-Type: application/json
+
+{
+  "endpointId": "{{endpointId}}",
+  "type": "P99_LATENCY",
+  "threshold": 1500,
+  "windowSec": 900,
+  "triggerForSec": 120,
+  "cooldownSec": 600,
+  "hysteresisRatio": 0.85,
+  "enabled": true
+}
+
+### Удалить правило алерта
+DELETE {{baseUrl}}/api/alert-rules/{{alertRuleId}}
+
+### Создать событие алерта
+POST {{baseUrl}}/api/alert-events
+Content-Type: application/json
+
+{
+  "ruleId": "{{alertRuleId}}",
+  "endpointId": "{{endpointId}}",
+  "state": "OPEN",
+  "openedAt": "2024-01-01T00:00:00Z",
+  "details": {
+    "reason": "p95 latency exceeded"
+  }
+}
+
+### Обновить событие алерта
+PUT {{baseUrl}}/api/alert-events/{{alertEventId}}
+Content-Type: application/json
+
+{
+  "ruleId": "{{alertRuleId}}",
+  "endpointId": "{{endpointId}}",
+  "state": "RESOLVED",
+  "openedAt": "2024-01-01T00:00:00Z",
+  "resolvedAt": "2024-01-01T00:10:00Z",
+  "lastNotifiedAt": "2024-01-01T00:05:00Z",
+  "details": {
+    "reason": "recovered"
+  }
+}
+
+### Список событий алертов
+GET {{baseUrl}}/api/alert-events?state=OPEN
+
+### Heartbeat backend-ноды
+POST {{baseUrl}}/api/nodes/heartbeat
+Content-Type: application/json
+
+{
+  "nodeId": "{{nodeId}}",
+  "baseUrl": "http://localhost:8080",
+  "startedAt": "2024-01-01T00:00:00Z",
+  "meta": {
+    "version": "0.0.1",
+    "env": "local"
+  }
+}
+
+### Список backend-нод
+GET {{baseUrl}}/api/nodes
+
+### Метрики backend-ноды
+GET {{baseUrl}}/api/nodes/{{nodeId}}/metrics
