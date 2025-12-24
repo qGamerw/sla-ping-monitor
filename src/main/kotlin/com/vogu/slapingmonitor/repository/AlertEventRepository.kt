@@ -1,8 +1,8 @@
 package com.vogu.slapingmonitor.repository
 
 import com.vogu.slapingmonitor.domain.AlertEventEntity
-import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
+import org.springframework.data.jpa.repository.JpaRepository
 
 interface AlertEventRepository : JpaRepository<AlertEventEntity, UUID> {
     /** Возвращает события алертов по состоянию. */

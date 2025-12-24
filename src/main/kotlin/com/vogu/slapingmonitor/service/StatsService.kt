@@ -2,12 +2,12 @@ package com.vogu.slapingmonitor.service
 
 import com.vogu.slapingmonitor.api.StatsResponse
 import com.vogu.slapingmonitor.repository.CheckResultRepository
-import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import org.springframework.stereotype.Service
 
 @Service
 class StatsService(
@@ -18,7 +18,12 @@ class StatsService(
         val now = Instant.now()
         val from = now.minusSeconds(windowSec)
         val results = checkResultRepository.findByEndpointIdAndWindow(endpointId, from, now)
-        return calculateStats(results.map { it.latencyMs }, results.count { !it.success }, results.lastOrNull()?.statusCode, minSamples)
+        return calculateStats(
+            results.map { it.latencyMs },
+            results.count { !it.success },
+            results.lastOrNull()?.statusCode,
+            minSamples
+        )
     }
 
     /** Считает статистику по списку задержек и числу ошибок. */

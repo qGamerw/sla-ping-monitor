@@ -6,9 +6,9 @@ import com.vogu.slapingmonitor.api.DEFAULT_TIMEOUT_MS
 import com.vogu.slapingmonitor.api.EndpointRequest
 import com.vogu.slapingmonitor.domain.EndpointEntity
 import com.vogu.slapingmonitor.repository.EndpointRepository
-import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
+import org.springframework.stereotype.Service
 
 @Service
 class EndpointService(

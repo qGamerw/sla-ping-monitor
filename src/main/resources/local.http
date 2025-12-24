@@ -16,10 +16,16 @@ Content-Type: application/json
     "User-Agent": "SLA-Ping-Monitor"
   },
   "timeoutMs": 3000,
-  "expectedStatus": [200, 399],
+  "expectedStatus": [
+    200,
+    399
+  ],
   "intervalSec": 60,
   "enabled": true,
-  "tags": ["public", "homepage"]
+  "tags": [
+    "public",
+    "homepage"
+  ]
 }
 
 ### Список endpoints
@@ -37,10 +43,16 @@ Content-Type: application/json
   "url": "https://example.com/health",
   "method": "GET",
   "timeoutMs": 2500,
-  "expectedStatus": [200, 399],
+  "expectedStatus": [
+    200,
+    399
+  ],
   "intervalSec": 30,
   "enabled": true,
-  "tags": ["public", "health"]
+  "tags": [
+    "public",
+    "health"
+  ]
 }
 
 ### Удалить endpoint
