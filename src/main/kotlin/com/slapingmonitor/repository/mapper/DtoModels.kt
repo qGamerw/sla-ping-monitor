@@ -1,4 +1,4 @@
-package com.vogu.slapingmonitor.api
+package com.slapingmonitor.repository.mapper
 
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min

@@ -1,11 +1,11 @@
-package com.vogu.slapingmonitor.service
+package com.slapingmonitor.service
 
-import com.vogu.slapingmonitor.api.DEFAULT_EXPECTED_STATUS
-import com.vogu.slapingmonitor.api.DEFAULT_INTERVAL_SEC
-import com.vogu.slapingmonitor.api.DEFAULT_TIMEOUT_MS
-import com.vogu.slapingmonitor.api.EndpointRequest
-import com.vogu.slapingmonitor.domain.EndpointEntity
-import com.vogu.slapingmonitor.repository.EndpointRepository
+import com.slapingmonitor.repository.EndpointRepository
+import com.slapingmonitor.repository.domain.EndpointEntity
+import com.slapingmonitor.repository.mapper.DEFAULT_EXPECTED_STATUS
+import com.slapingmonitor.repository.mapper.DEFAULT_INTERVAL_SEC
+import com.slapingmonitor.repository.mapper.DEFAULT_TIMEOUT_MS
+import com.slapingmonitor.repository.mapper.EndpointRequest
 import java.time.Instant
 import java.util.UUID
 import org.springframework.stereotype.Service
@@ -22,11 +22,14 @@ class EndpointService(
             method = request.method ?: "GET",
             headers = request.headers,
             timeoutMs = request.timeoutMs ?: DEFAULT_TIMEOUT_MS,
-            expectedStatus = request.expectedStatus ?: DEFAULT_EXPECTED_STATUS,
+            expectedStatus = request.expectedStatus
+                ?: DEFAULT_EXPECTED_STATUS,
             intervalSec = request.intervalSec ?: DEFAULT_INTERVAL_SEC,
             enabled = request.enabled ?: true,
             tags = request.tags,
-            nextRunAt = Instant.now().plusSeconds((request.intervalSec ?: DEFAULT_INTERVAL_SEC).toLong())
+            nextRunAt = Instant.now().plusSeconds(
+                (request.intervalSec ?: DEFAULT_INTERVAL_SEC).toLong()
+            )
         )
         return endpointRepository.save(entity)
     }

@@ -1,6 +1,6 @@
-package com.vogu.slapingmonitor.repository
+package com.slapingmonitor.repository
 
-import com.vogu.slapingmonitor.domain.AlertRuleEntity
+import com.slapingmonitor.repository.domain.AlertRuleEntity
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 

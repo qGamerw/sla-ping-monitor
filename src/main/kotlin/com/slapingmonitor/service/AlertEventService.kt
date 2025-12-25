@@ -1,8 +1,8 @@
-package com.vogu.slapingmonitor.service
+package com.slapingmonitor.service
 
-import com.vogu.slapingmonitor.api.AlertEventRequest
-import com.vogu.slapingmonitor.domain.AlertEventEntity
-import com.vogu.slapingmonitor.repository.AlertEventRepository
+import com.slapingmonitor.repository.AlertEventRepository
+import com.slapingmonitor.repository.domain.AlertEventEntity
+import com.slapingmonitor.repository.mapper.AlertEventRequest
 import java.util.UUID
 import org.springframework.stereotype.Service
 
@@ -29,7 +29,10 @@ class AlertEventService(
     }
 
     /** Обновляет параметры события алерта. */
-    fun update(id: UUID, request: AlertEventRequest): AlertEventEntity {
+    fun update(
+        id: UUID,
+        request: AlertEventRequest
+    ): AlertEventEntity {
         val existing = alertEventRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Alert event $id not found") }
         existing.state = request.state

@@ -1,8 +1,14 @@
-package com.vogu.slapingmonitor.api
+package com.slapingmonitor.api
 
-import com.vogu.slapingmonitor.repository.CheckResultRepository
-import com.vogu.slapingmonitor.service.EndpointService
-import com.vogu.slapingmonitor.service.StatsService
+import com.slapingmonitor.repository.CheckResultRepository
+import com.slapingmonitor.repository.mapper.CheckResultResponse
+import com.slapingmonitor.repository.mapper.EndpointRequest
+import com.slapingmonitor.repository.mapper.EndpointResponse
+import com.slapingmonitor.repository.mapper.EndpointSummaryResponse
+import com.slapingmonitor.repository.mapper.StatsResponse
+import com.slapingmonitor.repository.mapper.toResponse
+import com.slapingmonitor.service.EndpointService
+import com.slapingmonitor.service.StatsService
 import jakarta.validation.Valid
 import java.time.Instant
 import java.util.UUID
@@ -38,7 +44,10 @@ class EndpointController(
 
     /** Обновляет endpoint по идентификатору. */
     @PutMapping("/{id}")
-    fun update(@PathVariable id: UUID, @Valid @RequestBody request: EndpointRequest): EndpointResponse =
+    fun update(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: EndpointRequest
+    ): EndpointResponse =
         endpointService.update(id, request).toResponse()
 
     /** Удаляет endpoint по идентификатору. */

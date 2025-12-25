@@ -1,8 +1,8 @@
-package com.vogu.slapingmonitor.service
+package com.slapingmonitor.service
 
-import com.vogu.slapingmonitor.api.AlertRuleRequest
-import com.vogu.slapingmonitor.domain.AlertRuleEntity
-import com.vogu.slapingmonitor.repository.AlertRuleRepository
+import com.slapingmonitor.repository.AlertRuleRepository
+import com.slapingmonitor.repository.domain.AlertRuleEntity
+import com.slapingmonitor.repository.mapper.AlertRuleRequest
 import java.util.UUID
 import org.springframework.stereotype.Service
 
@@ -28,7 +28,10 @@ class AlertRuleService(
     }
 
     /** Обновляет параметры правила алерта. */
-    fun update(id: UUID, request: AlertRuleRequest): AlertRuleEntity {
+    fun update(
+        id: UUID,
+        request: AlertRuleRequest
+    ): AlertRuleEntity {
         val entity = alertRuleRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Alert rule $id not found") }
         entity.type = request.type

@@ -1,4 +1,4 @@
-package com.vogu.slapingmonitor
+package com.slapingmonitor
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

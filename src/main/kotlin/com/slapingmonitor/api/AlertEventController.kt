@@ -1,6 +1,9 @@
-package com.vogu.slapingmonitor.api
+package com.slapingmonitor.api
 
-import com.vogu.slapingmonitor.service.AlertEventService
+import com.slapingmonitor.repository.mapper.AlertEventRequest
+import com.slapingmonitor.repository.mapper.AlertEventResponse
+import com.slapingmonitor.repository.mapper.toResponse
+import com.slapingmonitor.service.AlertEventService
 import jakarta.validation.Valid
 import java.util.UUID
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,7 +27,10 @@ class AlertEventController(
 
     /** Обновляет событие алерта по идентификатору. */
     @PutMapping("/{id}")
-    fun update(@PathVariable id: UUID, @Valid @RequestBody request: AlertEventRequest): AlertEventResponse =
+    fun update(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: AlertEventRequest
+    ): AlertEventResponse =
         alertEventService.update(id, request).toResponse()
 
     /** Возвращает список событий алертов, опционально по состоянию. */

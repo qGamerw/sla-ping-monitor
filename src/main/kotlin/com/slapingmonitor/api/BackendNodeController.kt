@@ -1,6 +1,9 @@
-package com.vogu.slapingmonitor.api
+package com.slapingmonitor.api
 
-import com.vogu.slapingmonitor.service.BackendNodeService
+import com.slapingmonitor.repository.mapper.BackendNodeResponse
+import com.slapingmonitor.repository.mapper.NodeHeartbeatRequest
+import com.slapingmonitor.repository.mapper.toResponse
+import com.slapingmonitor.service.BackendNodeService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

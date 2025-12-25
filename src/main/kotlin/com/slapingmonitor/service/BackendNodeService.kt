@@ -1,14 +1,13 @@
-package com.vogu.slapingmonitor.service
+package com.slapingmonitor.service
 
-import com.vogu.slapingmonitor.api.NodeHeartbeatRequest
-import com.vogu.slapingmonitor.domain.BackendNodeEntity
-import com.vogu.slapingmonitor.repository.BackendNodeRepository
+import com.slapingmonitor.repository.domain.BackendNodeEntity
+import com.slapingmonitor.repository.mapper.NodeHeartbeatRequest
 import java.time.Instant
 import org.springframework.stereotype.Service
 
 @Service
 class BackendNodeService(
-    private val backendNodeRepository: BackendNodeRepository
+    private val backendNodeRepository: com.slapingmonitor.repository.BackendNodeRepository
 ) {
     /** Регистрирует или обновляет heartbeat backend-ноды. */
     fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity {

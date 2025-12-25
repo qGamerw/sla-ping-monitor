@@ -1,4 +1,4 @@
-package com.vogu.slapingmonitor.domain
+package com.slapingmonitor.repository.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

@@ -1,6 +1,9 @@
-package com.vogu.slapingmonitor.api
+package com.slapingmonitor.api
 
-import com.vogu.slapingmonitor.service.AlertRuleService
+import com.slapingmonitor.repository.mapper.AlertRuleRequest
+import com.slapingmonitor.repository.mapper.AlertRuleResponse
+import com.slapingmonitor.repository.mapper.toResponse
+import com.slapingmonitor.service.AlertRuleService
 import jakarta.validation.Valid
 import java.util.UUID
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -30,7 +33,10 @@ class AlertRuleController(
 
     /** Обновляет правило алерта по идентификатору. */
     @PutMapping("/{id}")
-    fun update(@PathVariable id: UUID, @Valid @RequestBody request: AlertRuleRequest): AlertRuleResponse =
+    fun update(
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: AlertRuleRequest
+    ): AlertRuleResponse =
         alertRuleService.update(id, request).toResponse()
 
     /** Удаляет правило алерта по идентификатору. */

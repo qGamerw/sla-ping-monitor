@@ -1,6 +1,6 @@
-package com.vogu.slapingmonitor.repository
+package com.slapingmonitor.repository
 
-import com.vogu.slapingmonitor.domain.CheckResultEntity
+import com.slapingmonitor.repository.domain.CheckResultEntity
 import java.time.Instant
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository

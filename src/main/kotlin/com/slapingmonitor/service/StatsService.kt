@@ -1,7 +1,7 @@
-package com.vogu.slapingmonitor.service
+package com.slapingmonitor.service
 
-import com.vogu.slapingmonitor.api.StatsResponse
-import com.vogu.slapingmonitor.repository.CheckResultRepository
+import com.slapingmonitor.repository.CheckResultRepository
+import com.slapingmonitor.repository.mapper.StatsResponse
 import java.time.Instant
 import java.util.UUID
 import kotlin.math.ceil
@@ -27,7 +27,12 @@ class StatsService(
     }
 
     /** Считает статистику по списку задержек и числу ошибок. */
-    fun calculateStats(latencies: List<Int>, errorCount: Int, lastStatus: Int?, minSamples: Int): StatsResponse {
+    fun calculateStats(
+        latencies: List<Int>,
+        errorCount: Int,
+        lastStatus: Int?,
+        minSamples: Int
+    ): StatsResponse {
         if (latencies.isEmpty()) {
             return StatsResponse(
                 sampleCount = 0,

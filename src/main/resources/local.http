@@ -42,7 +42,7 @@ Content-Type: application/json
   "name": "Homepage",
   "url": "https://example.com/health",
   "method": "GET",
-  "timeoutMs": 2500,
+  "timeoutMs": 250,
   "expectedStatus": [
     200,
     399
