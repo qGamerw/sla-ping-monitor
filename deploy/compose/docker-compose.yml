@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: sla_ping_monitor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+  backend:
+    image: sla-ping-monitor-backend:local
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/sla_ping_monitor
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+  frontend:
+    image: sla-ping-monitor-frontend:local
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+  worker:
+    image: sla-ping-monitor-alerting-worker:local
+    environment:
+      BACKEND_API_BASE_URL: http://backend:8080
+    depends_on:
+      - backend

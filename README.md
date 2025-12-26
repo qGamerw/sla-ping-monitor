@@ -32,7 +32,7 @@ Backend-сервис для **SLA Ping Monitor** (MVP). Выполняет пл�
 - `DB_USER` — `postgres`
 - `DB_PASSWORD` — `postgres`
 
-Дополнительные настройки см. в `src/main/resources/application.yaml`.
+Дополнительные настройки см. в `apps/backend/src/main/resources/application.yml`.
 
 ### Запуск
 
@@ -57,8 +57,8 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 
 ## Структура
 
-- `src/main/kotlin/com/vogu/slapingmonitor` — код приложения
-- `src/main/resources/application.yaml` — конфигурация
+- `apps/backend/src/main/kotlin/com/acme/slamonitor` — код приложения
+- `apps/backend/src/main/resources/application.yml` — конфигурация
 
 ## Полезные эндпоинты
 
