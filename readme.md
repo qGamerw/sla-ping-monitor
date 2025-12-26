@@ -1,7 +1,7 @@
 # SLA Ping Monitor Backend
 
-Backend-сервис для **SLA Ping Monitor** (MVP). Выполняет плановые проверки HTTP endpoints, хранит результаты и отдаёт
-REST API для UI (дашборды/алертинг в UI).
+Backend-сервис для **SLA Ping Monitor** (MVP). Выполняет плановые проверки HTTP endpoints, хранит результаты и
+отдаёт REST API для UI (дашборды/алертинг в UI).
 
 ## Возможности (MVP)
 
