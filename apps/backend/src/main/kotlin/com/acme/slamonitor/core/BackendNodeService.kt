@@ -1,5 +1,6 @@
 package com.acme.slamonitor.core
 
+import com.acme.slamonitor.persistence.BackendNodeRepository
 import com.acme.slamonitor.persistence.domain.BackendNodeEntity
 import com.acme.slamonitor.persistence.mapper.NodeHeartbeatRequest
 import java.time.Instant
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class BackendNodeService(
-    private val backendNodeRepository: com.acme.slamonitor.persistence.BackendNodeRepository
+    private val backendNodeRepository: BackendNodeRepository
 ) {
     /** Регистрирует или обновляет heartbeat backend-ноды. */
     fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity {
