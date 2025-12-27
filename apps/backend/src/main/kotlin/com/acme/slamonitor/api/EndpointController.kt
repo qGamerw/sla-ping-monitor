@@ -1,17 +1,12 @@
 package com.acme.slamonitor.api
 
-import com.acme.slamonitor.persistence.CheckResultRepository
-import com.acme.slamonitor.persistence.mapper.CheckResultResponse
-import com.acme.slamonitor.persistence.mapper.EndpointRequest
-import com.acme.slamonitor.persistence.mapper.EndpointResponse
-import com.acme.slamonitor.persistence.mapper.EndpointSummaryResponse
-import com.acme.slamonitor.persistence.mapper.StatsResponse
-import com.acme.slamonitor.persistence.mapper.toResponse
+import com.acme.slamonitor.api.dto.EndpointRequest
+import com.acme.slamonitor.api.dto.Message
+import com.acme.slamonitor.api.validate.ValidationPipeline
 import com.acme.slamonitor.core.EndpointService
-import com.acme.slamonitor.core.StatsService
-import jakarta.validation.Valid
-import java.time.Instant
-import java.util.UUID
+import com.acme.slamonitor.core.impl.StatsService
+import com.acme.slamonitor.persistence.CheckResultRepository
+import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,45 +16,52 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.Instant
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/endpoints")
 class EndpointController(
     private val endpointService: EndpointService,
     private val statsService: StatsService,
-    private val checkResultRepository: CheckResultRepository
+    private val checkResultRepository: CheckResultRepository,
+    private val validator: ValidationPipeline<EndpointRequest>
 ) {
     /** Создаёт endpoint и возвращает сохранённые данные. */
     @PostMapping
-    fun create(@Valid @RequestBody request: EndpointRequest): EndpointResponse =
-        endpointService.create(request).toResponse()
-
-    /** Возвращает список всех endpoints. */
-    @GetMapping
-    fun list(): List<EndpointResponse> = endpointService.list().map { it.toResponse() }
-
-    /** Возвращает endpoint по идентификатору. */
-    @GetMapping("/{id}")
-    fun get(@PathVariable id: UUID): EndpointResponse = endpointService.get(id).toResponse()
+    fun create(@RequestBody request: EndpointRequest): BaseResponse<Message> {
+        validator.validate(request)
+        return BaseResponse(endpointService.create(request))
+    }
 
     /** Обновляет endpoint по идентификатору. */
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: UUID,
-        @Valid @RequestBody request: EndpointRequest
-    ): EndpointResponse =
-        endpointService.update(id, request).toResponse()
+        @RequestBody request: EndpointRequest
+    ): BaseResponse<Message> {
+        validator.validate(request)
+        return BaseResponse(endpointService.update(id, request))
+    }
 
     /** Удаляет endpoint по идентификатору. */
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: UUID) = endpointService.delete(id)
+    fun delete(@PathVariable id: UUID) = BaseResponse(endpointService.deleteEndpoint(id))
+
+    /** Возвращает endpoint по идентификатору. */
+    @GetMapping("/{id}")
+    fun getEndpoint(@PathVariable id: UUID) = BaseResponse(endpointService.getEndpoint(id))
+
+    /** Возвращает список всех endpoints. */
+    @GetMapping
+    fun getEndpoints() = BaseResponse(endpointService.getEndpoints())
 
     /** Возвращает статистику по окну времени для endpoint. */
     @GetMapping("/{id}/stats")
     fun stats(
         @PathVariable id: UUID,
         @RequestParam windowSec: Long
-    ): StatsResponse = statsService.getStats(id, windowSec)
+    ) = BaseResponse(statsService.getStats(id, windowSec))
 
     /** Возвращает результаты проверок endpoint за интервал. */
     @GetMapping("/{id}/checks")
@@ -67,23 +69,9 @@ class EndpointController(
         @PathVariable id: UUID,
         @RequestParam from: Instant,
         @RequestParam to: Instant
-    ): List<CheckResultResponse> =
-        checkResultRepository.findByEndpointIdAndWindow(id, from, to).map { it.toResponse() }
+    ) = BaseResponse(checkResultRepository.findByEndpointIdAndWindow(id, from, to))
 
     /** Возвращает сводку по endpoints с расчётом статистики за окно. */
     @GetMapping("/summary")
-    fun summary(@RequestParam windowSec: Long): List<EndpointSummaryResponse> =
-        endpointService.list().map { endpoint ->
-            val lastCheck = checkResultRepository.findTop1ByEndpointIdOrderByFinishedAtDesc(endpoint.id)
-            EndpointSummaryResponse(
-                id = endpoint.id,
-                name = endpoint.name,
-                url = endpoint.url,
-                enabled = endpoint.enabled,
-                lastCheckAt = lastCheck?.finishedAt,
-                lastStatusCode = lastCheck?.statusCode,
-                lastSuccess = lastCheck?.success,
-                windowStats = statsService.getStats(endpoint.id, windowSec)
-            )
-        }
+    fun summary(@RequestParam windowSec: Long) = BaseResponse("TODO")
 }

@@ -6,16 +6,16 @@ import jakarta.persistence.Id
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
-import java.time.Instant
-import java.util.UUID
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
+import java.time.Instant
+import java.util.UUID
 
 @Entity
 @Table(name = "endpoints")
 class EndpointEntity(
     @Id
-    val id: UUID = UUID.randomUUID(),
+    val id: UUID,
 
     @Column(nullable = false)
     var name: String,

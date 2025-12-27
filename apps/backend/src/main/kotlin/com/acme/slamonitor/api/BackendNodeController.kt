@@ -1,10 +1,8 @@
 package com.acme.slamonitor.api
 
-import com.acme.slamonitor.persistence.mapper.BackendNodeResponse
-import com.acme.slamonitor.persistence.mapper.NodeHeartbeatRequest
-import com.acme.slamonitor.persistence.mapper.toResponse
-import com.acme.slamonitor.core.BackendNodeService
-import jakarta.validation.Valid
+import com.acme.slamonitor.api.dto.NodeHeartbeatRequest
+import com.acme.slamonitor.core.impl.BackendNodeService
+import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -19,12 +17,11 @@ class BackendNodeController(
 ) {
     /** Принимает heartbeat от backend-ноды и обновляет её данные. */
     @PostMapping("/heartbeat")
-    fun heartbeat(@Valid @RequestBody request: NodeHeartbeatRequest): BackendNodeResponse =
-        backendNodeService.heartbeat(request).toResponse()
+    fun heartbeat(@RequestBody request: NodeHeartbeatRequest) = BaseResponse(backendNodeService.heartbeat(request))
 
     /** Возвращает список активных backend-нод. */
     @GetMapping
-    fun list(): List<BackendNodeResponse> = backendNodeService.list().map { it.toResponse() }
+    fun getNodes() = BaseResponse(backendNodeService.list())
 
     /** Возвращает заглушку метрик для backend-ноды. */
     @GetMapping("/{nodeId}/metrics")

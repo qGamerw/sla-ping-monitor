@@ -1,63 +1,20 @@
 package com.acme.slamonitor.core
 
-import com.acme.slamonitor.persistence.EndpointRepository
-import com.acme.slamonitor.persistence.domain.EndpointEntity
-import com.acme.slamonitor.persistence.mapper.DEFAULT_EXPECTED_STATUS
-import com.acme.slamonitor.persistence.mapper.DEFAULT_INTERVAL_SEC
-import com.acme.slamonitor.persistence.mapper.DEFAULT_TIMEOUT_MS
-import com.acme.slamonitor.persistence.mapper.EndpointRequest
-import java.time.Instant
+import com.acme.slamonitor.api.dto.EndpointRequest
+import com.acme.slamonitor.api.dto.EndpointResponse
+import com.acme.slamonitor.api.dto.Message
 import java.util.UUID
-import org.springframework.stereotype.Service
 
-@Service
-class EndpointService(
-    private val endpointRepository: EndpointRepository
-) {
-    /** Создаёт endpoint и подготавливает поля планировщика. */
-    fun create(request: EndpointRequest): EndpointEntity {
-        val entity = EndpointEntity(
-            name = request.name,
-            url = request.url,
-            method = request.method ?: "GET",
-            headers = request.headers,
-            timeoutMs = request.timeoutMs ?: DEFAULT_TIMEOUT_MS,
-            expectedStatus = request.expectedStatus
-                ?: DEFAULT_EXPECTED_STATUS,
-            intervalSec = request.intervalSec ?: DEFAULT_INTERVAL_SEC,
-            enabled = request.enabled ?: true,
-            tags = request.tags,
-            nextRunAt = Instant.now().plusSeconds(
-                (request.intervalSec ?: DEFAULT_INTERVAL_SEC).toLong()
-            )
-        )
-        return endpointRepository.save(entity)
-    }
+interface EndpointService {
 
-    /** Обновляет конфигурацию endpoint. */
-    fun update(id: UUID, request: EndpointRequest): EndpointEntity {
-        val entity = get(id)
-        entity.name = request.name
-        entity.url = request.url
-        entity.method = request.method ?: entity.method
-        entity.headers = request.headers
-        entity.timeoutMs = request.timeoutMs ?: entity.timeoutMs
-        entity.expectedStatus = request.expectedStatus ?: entity.expectedStatus
-        entity.intervalSec = request.intervalSec ?: entity.intervalSec
-        entity.enabled = request.enabled ?: entity.enabled
-        entity.tags = request.tags
-        return endpointRepository.save(entity)
-    }
+    fun create(request: EndpointRequest): Message
 
-    /** Возвращает endpoint по идентификатору. */
-    fun get(id: UUID): EndpointEntity = endpointRepository.findById(id)
-        .orElseThrow { IllegalArgumentException("Endpoint $id not found") }
+    fun update(id: UUID, request: EndpointRequest): Message
 
-    /** Возвращает список всех endpoints. */
-    fun list(): List<EndpointEntity> = endpointRepository.findAll()
+    fun deleteEndpoint(id: UUID): Message
 
-    /** Удаляет endpoint по идентификатору. */
-    fun delete(id: UUID) {
-        endpointRepository.deleteById(id)
-    }
+    fun getEndpoint(id: UUID): EndpointResponse
+
+    fun getEndpoints(): List<EndpointResponse>
+
 }

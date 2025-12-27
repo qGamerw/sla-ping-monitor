@@ -1,11 +1,8 @@
 package com.acme.slamonitor.api
 
-import com.acme.slamonitor.persistence.mapper.AlertRuleRequest
-import com.acme.slamonitor.persistence.mapper.AlertRuleResponse
-import com.acme.slamonitor.persistence.mapper.toResponse
+import com.acme.slamonitor.api.dto.AlertRuleRequest
 import com.acme.slamonitor.core.AlertRuleService
-import jakarta.validation.Valid
-import java.util.UUID
+import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,31 +12,29 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/alert-rules")
 class AlertRuleController(
-    private val alertRuleService: AlertRuleService
+    private val alertRuleServiceImpl: AlertRuleService
 ) {
     /** Создаёт правило алерта и возвращает его данные. */
     @PostMapping
-    fun create(@Valid @RequestBody request: AlertRuleRequest): AlertRuleResponse =
-        alertRuleService.create(request).toResponse()
+    fun create(@RequestBody request: AlertRuleRequest) = BaseResponse(alertRuleServiceImpl.create(request))
 
     /** Возвращает список правил алертов, опционально по endpoint. */
     @GetMapping
-    fun list(@RequestParam(required = false) endpointId: UUID?): List<AlertRuleResponse> =
-        alertRuleService.list(endpointId).map { it.toResponse() }
+    fun list(@RequestParam(required = false) endpointId: UUID?) = BaseResponse(alertRuleServiceImpl.list(endpointId))
 
     /** Обновляет правило алерта по идентификатору. */
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: UUID,
-        @Valid @RequestBody request: AlertRuleRequest
-    ): AlertRuleResponse =
-        alertRuleService.update(id, request).toResponse()
+        @RequestBody request: AlertRuleRequest
+    ) = BaseResponse(alertRuleServiceImpl.update(id, request))
 
     /** Удаляет правило алерта по идентификатору. */
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: UUID) = alertRuleService.delete(id)
+    fun delete(@PathVariable id: UUID) = BaseResponse(alertRuleServiceImpl.delete(id))
 }

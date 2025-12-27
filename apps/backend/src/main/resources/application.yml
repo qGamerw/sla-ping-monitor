@@ -8,6 +8,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+      connection:
+        release-mode: on_close
     properties:
       hibernate:
         format_sql: true
@@ -15,6 +17,7 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
+    default-property-inclusion: non_null
 
 management:
   endpoints:

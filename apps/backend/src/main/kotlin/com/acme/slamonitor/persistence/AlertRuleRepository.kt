@@ -1,8 +1,8 @@
 package com.acme.slamonitor.persistence
 
 import com.acme.slamonitor.persistence.domain.AlertRuleEntity
-import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
+import java.util.UUID
 
 interface AlertRuleRepository : JpaRepository<AlertRuleEntity, UUID> {
     /** Возвращает правила алертов для endpoint. */

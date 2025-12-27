@@ -1,59 +1,19 @@
 package com.acme.slamonitor.core
 
-import com.acme.slamonitor.persistence.AlertRuleRepository
-import com.acme.slamonitor.persistence.domain.AlertRuleEntity
-import com.acme.slamonitor.persistence.mapper.AlertRuleRequest
+import com.acme.slamonitor.api.dto.AlertRuleRequest
+import com.acme.slamonitor.api.dto.AlertRuleResponse
 import java.util.UUID
-import org.springframework.stereotype.Service
 
-@Service
-class AlertRuleService(
-    private val alertRuleRepository: AlertRuleRepository,
-    private val endpointService: EndpointService
-) {
-    /** Создаёт правило алерта для endpoint. */
-    fun create(request: AlertRuleRequest): AlertRuleEntity {
-        val endpoint = endpointService.get(request.endpointId)
-        val entity = AlertRuleEntity(
-            endpoint = endpoint,
-            type = request.type,
-            threshold = request.threshold,
-            windowSec = request.windowSec,
-            triggerForSec = request.triggerForSec,
-            cooldownSec = request.cooldownSec,
-            hysteresisRatio = request.hysteresisRatio,
-            enabled = request.enabled ?: true
-        )
-        return alertRuleRepository.save(entity)
-    }
+interface AlertRuleService {
 
-    /** Обновляет параметры правила алерта. */
-    fun update(
-        id: UUID,
-        request: AlertRuleRequest
-    ): AlertRuleEntity {
-        val entity = alertRuleRepository.findById(id)
-            .orElseThrow { IllegalArgumentException("Alert rule $id not found") }
-        entity.type = request.type
-        entity.threshold = request.threshold
-        entity.windowSec = request.windowSec
-        entity.triggerForSec = request.triggerForSec
-        entity.cooldownSec = request.cooldownSec
-        entity.hysteresisRatio = request.hysteresisRatio
-        entity.enabled = request.enabled ?: entity.enabled
-        return alertRuleRepository.save(entity)
-    }
+    fun create(request: AlertRuleRequest): AlertRuleResponse
 
-    /** Возвращает список правил, опционально по endpoint. */
-    fun list(endpointId: UUID?): List<AlertRuleEntity> =
-        if (endpointId == null) alertRuleRepository.findAll() else alertRuleRepository.findAllByEndpointId(endpointId)
+    fun update(id: UUID, request: AlertRuleRequest): AlertRuleResponse
 
-    /** Возвращает правило алерта по идентификатору. */
-    fun get(id: UUID): AlertRuleEntity = alertRuleRepository.findById(id)
-        .orElseThrow { IllegalArgumentException("Alert rule $id not found") }
+    fun list(endpointId: UUID?): List<AlertRuleResponse>
 
-    /** Удаляет правило алерта по идентификатору. */
-    fun delete(id: UUID) {
-        alertRuleRepository.deleteById(id)
-    }
+    fun get(id: UUID): AlertRuleResponse
+
+    fun delete(id: UUID)
+
 }
