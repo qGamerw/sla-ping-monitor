@@ -1,8 +1,8 @@
-package com.acme.slamonitor.core.impl
+package com.acme.slamonitor.bussneis.service.impl
 
 import com.acme.slamonitor.api.dto.AlertRuleRequest
 import com.acme.slamonitor.api.dto.AlertRuleResponse
-import com.acme.slamonitor.core.AlertRuleService
+import com.acme.slamonitor.bussneis.service.AlertRuleService
 import com.acme.slamonitor.persistence.AlertRuleRepository
 import com.acme.slamonitor.persistence.mapper.AlertRuleMapper.Companion.MAPPER
 import org.springframework.stereotype.Service

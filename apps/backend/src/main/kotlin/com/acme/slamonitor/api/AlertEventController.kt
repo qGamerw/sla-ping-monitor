@@ -1,7 +1,7 @@
 package com.acme.slamonitor.api
 
 import com.acme.slamonitor.api.dto.AlertEventRequest
-import com.acme.slamonitor.core.AlertEventService
+import com.acme.slamonitor.bussneis.service.AlertEventService
 import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

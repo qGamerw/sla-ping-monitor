@@ -1,9 +1,9 @@
-package com.acme.slamonitor.core.impl
+package com.acme.slamonitor.bussneis.service.impl
 
 import com.acme.slamonitor.api.dto.EndpointRequest
 import com.acme.slamonitor.api.dto.EndpointResponse
 import com.acme.slamonitor.api.dto.Message
-import com.acme.slamonitor.core.EndpointService
+import com.acme.slamonitor.bussneis.service.EndpointService
 import com.acme.slamonitor.exception.EndpointException
 import com.acme.slamonitor.persistence.EndpointRepository
 import com.acme.slamonitor.persistence.domain.EndpointEntity
@@ -14,7 +14,6 @@ import com.acme.slamonitor.utils.DEFAULT_INTERVAL_SEC
 import com.acme.slamonitor.utils.DEFAULT_TIMEOUT_MS
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
-import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -36,8 +35,6 @@ class EndpointServiceImpl(
             expectedStatus = request.expectedStatus ?: DEFAULT_EXPECTED_STATUS,
             intervalSec = request.intervalSec ?: DEFAULT_INTERVAL_SEC,
             enabled = request.enabled ?: true,
-            tags = request.tags,
-            nextRunAt = Instant.now().plusSeconds((request.intervalSec ?: DEFAULT_INTERVAL_SEC).toLong())
         )
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Create endpoint $id") {
             endpointRepository.save(entity)
@@ -64,7 +61,6 @@ class EndpointServiceImpl(
         entity.expectedStatus = request.expectedStatus ?: entity.expectedStatus
         entity.intervalSec = request.intervalSec ?: entity.intervalSec
         entity.enabled = request.enabled ?: entity.enabled
-        entity.tags = request.tags
 
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Update endpoint $id") {
             endpointRepository.save(entity)

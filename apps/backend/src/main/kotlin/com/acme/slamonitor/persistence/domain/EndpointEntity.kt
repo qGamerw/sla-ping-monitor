@@ -42,12 +42,6 @@ class EndpointEntity(
     @Column(nullable = false)
     var enabled: Boolean = true,
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    var tags: List<String>? = null,
-
-    @Column(name = "next_run_at")
-    var nextRunAt: Instant? = null,
-
     @Column(name = "lease_owner")
     var leaseOwner: String? = null,
 
@@ -58,7 +52,10 @@ class EndpointEntity(
     var createdAt: Instant = Instant.now(),
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    var updatedAt: Instant = Instant.now(),
+
+    @Column(name = "version", nullable = false)
+    var version: Long = 0
 ) {
     /** Заполняет служебные поля при создании записи. */
     @PrePersist
@@ -66,11 +63,13 @@ class EndpointEntity(
         val now = Instant.now()
         createdAt = now
         updatedAt = now
+        version = System.nanoTime()
     }
 
     /** Обновляет время изменения при сохранении. */
     @PreUpdate
     fun onUpdate() {
         updatedAt = Instant.now()
+        version = System.nanoTime()
     }
 }
