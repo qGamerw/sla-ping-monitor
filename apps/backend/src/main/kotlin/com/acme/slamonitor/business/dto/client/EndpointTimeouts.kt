@@ -1,4 +1,4 @@
-package com.acme.slamonitor.bussneis.dto.client
+package com.acme.slamonitor.business.dto.client
 
 data class EndpointTimeouts(
     val connectMs: Long? = null,

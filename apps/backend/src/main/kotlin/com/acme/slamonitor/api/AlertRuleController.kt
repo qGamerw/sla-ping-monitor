@@ -1,7 +1,7 @@
 package com.acme.slamonitor.api
 
 import com.acme.slamonitor.api.dto.AlertRuleRequest
-import com.acme.slamonitor.bussneis.service.AlertRuleService
+import com.acme.slamonitor.business.service.AlertRuleService
 import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping

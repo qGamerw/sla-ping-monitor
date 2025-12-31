@@ -1,7 +1,7 @@
 package com.acme.slamonitor.configuration
 
-import com.acme.slamonitor.bussneis.client.EndpointClient
-import com.acme.slamonitor.bussneis.client.impl.LoggingEndpointClient
+import com.acme.slamonitor.business.client.EndpointClient
+import com.acme.slamonitor.business.client.impl.LoggingEndpointClient
 import org.springframework.beans.BeansException
 import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.core.Ordered

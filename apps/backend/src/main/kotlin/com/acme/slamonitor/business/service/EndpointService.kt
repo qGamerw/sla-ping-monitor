@@ -1,4 +1,4 @@
-package com.acme.slamonitor.bussneis.service
+package com.acme.slamonitor.business.service
 
 import com.acme.slamonitor.api.dto.EndpointRequest
 import com.acme.slamonitor.api.dto.EndpointResponse

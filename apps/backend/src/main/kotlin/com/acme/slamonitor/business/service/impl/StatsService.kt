@@ -1,4 +1,4 @@
-package com.acme.slamonitor.bussneis.service.impl
+package com.acme.slamonitor.business.service.impl
 
 import com.acme.slamonitor.api.dto.StatsResponse
 import com.acme.slamonitor.persistence.CheckResultRepository

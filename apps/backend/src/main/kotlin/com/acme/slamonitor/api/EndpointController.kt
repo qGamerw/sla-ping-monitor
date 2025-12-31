@@ -3,8 +3,8 @@ package com.acme.slamonitor.api
 import com.acme.slamonitor.api.dto.EndpointRequest
 import com.acme.slamonitor.api.dto.Message
 import com.acme.slamonitor.api.validate.ValidationPipeline
-import com.acme.slamonitor.bussneis.service.EndpointService
-import com.acme.slamonitor.bussneis.service.impl.StatsService
+import com.acme.slamonitor.business.service.EndpointService
+import com.acme.slamonitor.business.service.impl.StatsService
 import com.acme.slamonitor.persistence.CheckResultRepository
 import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.DeleteMapping

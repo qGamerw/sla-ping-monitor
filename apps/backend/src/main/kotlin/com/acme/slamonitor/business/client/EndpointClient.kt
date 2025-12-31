@@ -1,6 +1,6 @@
-package com.acme.slamonitor.bussneis.client
+package com.acme.slamonitor.business.client
 
-import com.acme.slamonitor.bussneis.dto.client.RuntimeRequest
+import com.acme.slamonitor.business.dto.client.RuntimeRequest
 import io.ktor.client.statement.HttpResponse
 
 interface EndpointClient {
