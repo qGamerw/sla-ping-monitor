@@ -1,6 +1,6 @@
 package com.acme.slamonitor.persistence.mapper
 
-import com.acme.slamonitor.api.dto.EndpointResponse
+import com.acme.slamonitor.api.dto.response.EndpointResponse
 import com.acme.slamonitor.persistence.domain.EndpointEntity
 import org.mapstruct.Mapper
 import org.mapstruct.factory.Mappers

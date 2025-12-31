@@ -1,8 +1,8 @@
 package com.acme.slamonitor.configuration
 
-import com.acme.slamonitor.api.dto.EndpointRequest
+import com.acme.slamonitor.api.dto.request.EndpointRequest
+import com.acme.slamonitor.api.validate.BaseValidationPipeline
 import com.acme.slamonitor.api.validate.ValidationPipeline
-import com.acme.slamonitor.api.validate.ValidationPipelineImpl
 import com.acme.slamonitor.api.validate.impl.EndpointIntervalValidator
 import com.acme.slamonitor.api.validate.impl.EndpointTimeoutValidator
 import com.acme.slamonitor.api.validate.impl.EndpointUrlValidator
@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class ValidationPipelineConfig {
+class ValidationRequestConfig {
 
     @Bean
-    fun endpointValidator(): ValidationPipeline<EndpointRequest> = ValidationPipelineImpl(
+    fun endpointValidator(): ValidationPipeline<EndpointRequest> = BaseValidationPipeline(
         listOf(
             EndpointUrlValidator(),
             EndpointIntervalValidator(),

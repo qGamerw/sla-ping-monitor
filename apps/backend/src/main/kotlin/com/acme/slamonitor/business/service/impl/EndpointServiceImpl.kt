@@ -1,8 +1,8 @@
 package com.acme.slamonitor.business.service.impl
 
-import com.acme.slamonitor.api.dto.EndpointRequest
-import com.acme.slamonitor.api.dto.EndpointResponse
 import com.acme.slamonitor.api.dto.Message
+import com.acme.slamonitor.api.dto.request.EndpointRequest
+import com.acme.slamonitor.api.dto.response.EndpointResponse
 import com.acme.slamonitor.business.service.EndpointService
 import com.acme.slamonitor.exception.EndpointException
 import com.acme.slamonitor.persistence.EndpointRepository
@@ -12,10 +12,9 @@ import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
 import com.acme.slamonitor.utils.DEFAULT_EXPECTED_STATUS
 import com.acme.slamonitor.utils.DEFAULT_INTERVAL_SEC
 import com.acme.slamonitor.utils.DEFAULT_TIMEOUT_MS
-import kotlinx.coroutines.runBlocking
-import org.springframework.context.ApplicationEventPublisher
-import org.springframework.stereotype.Service
 import java.util.UUID
+import kotlinx.coroutines.runBlocking
+import org.springframework.stereotype.Service
 
 @Service
 class EndpointServiceImpl(

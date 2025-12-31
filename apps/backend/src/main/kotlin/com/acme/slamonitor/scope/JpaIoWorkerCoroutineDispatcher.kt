@@ -1,7 +1,7 @@
 package com.acme.slamonitor.scope
 
 import com.acme.slamonitor.configuration.VIRTUAL_THREAD_DISPATCHER_BEAN_NAME
-import com.acme.slamonitor.utils.JpaIoTransactionalLogging
+import com.acme.slamonitor.persistence.util.JpaIoTransactionalLogging
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

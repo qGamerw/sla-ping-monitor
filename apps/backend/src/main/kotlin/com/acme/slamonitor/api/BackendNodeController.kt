@@ -1,8 +1,8 @@
 package com.acme.slamonitor.api
 
-import com.acme.slamonitor.api.dto.NodeHeartbeatRequest
+import com.acme.slamonitor.api.dto.BaseResponse
+import com.acme.slamonitor.api.dto.request.NodeHeartbeatRequest
 import com.acme.slamonitor.business.service.impl.BackendNodeService
-import com.acme.slamonitor.utils.BaseResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping

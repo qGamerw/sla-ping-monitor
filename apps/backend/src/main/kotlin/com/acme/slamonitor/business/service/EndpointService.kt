@@ -1,8 +1,8 @@
 package com.acme.slamonitor.business.service
 
-import com.acme.slamonitor.api.dto.EndpointRequest
-import com.acme.slamonitor.api.dto.EndpointResponse
 import com.acme.slamonitor.api.dto.Message
+import com.acme.slamonitor.api.dto.request.EndpointRequest
+import com.acme.slamonitor.api.dto.response.EndpointResponse
 import java.util.UUID
 
 interface EndpointService {

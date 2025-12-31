@@ -1,8 +1,8 @@
 package com.acme.slamonitor.configuration
 
+import com.acme.slamonitor.api.dto.ApiError
+import com.acme.slamonitor.api.dto.BaseResponse
 import com.acme.slamonitor.exception.ValidationExecution
-import com.acme.slamonitor.utils.ApiError
-import com.acme.slamonitor.utils.BaseResponse
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus

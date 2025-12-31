@@ -1,4 +1,4 @@
-package com.acme.slamonitor.utils
+package com.acme.slamonitor.persistence.util
 
 import com.acme.slamonitor.aspect.annotation.TransactionalLogging
 import org.springframework.stereotype.Service

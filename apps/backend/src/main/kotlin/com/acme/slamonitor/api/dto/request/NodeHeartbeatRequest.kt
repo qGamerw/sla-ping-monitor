@@ -1,4 +1,4 @@
-package com.acme.slamonitor.api.dto
+package com.acme.slamonitor.api.dto.request
 
 import java.time.Instant
 

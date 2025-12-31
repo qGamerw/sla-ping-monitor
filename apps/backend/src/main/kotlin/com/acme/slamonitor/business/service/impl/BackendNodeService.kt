@@ -1,10 +1,10 @@
 package com.acme.slamonitor.business.service.impl
 
-import com.acme.slamonitor.api.dto.NodeHeartbeatRequest
+import com.acme.slamonitor.api.dto.request.NodeHeartbeatRequest
 import com.acme.slamonitor.persistence.BackendNodeRepository
 import com.acme.slamonitor.persistence.domain.BackendNodeEntity
-import org.springframework.stereotype.Service
 import java.time.Instant
+import org.springframework.stereotype.Service
 
 @Service
 class BackendNodeService(

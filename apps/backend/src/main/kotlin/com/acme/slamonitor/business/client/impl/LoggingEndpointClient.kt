@@ -4,9 +4,9 @@ import com.acme.slamonitor.business.client.EndpointClient
 import com.acme.slamonitor.business.dto.client.RuntimeRequest
 import io.ktor.client.statement.HttpResponse
 import io.ktor.util.toMap
-import org.slf4j.LoggerFactory
 import java.util.UUID
 import kotlin.system.measureTimeMillis
+import org.slf4j.LoggerFactory
 
 class LoggingEndpointClient(
     private val delegate: EndpointClient,

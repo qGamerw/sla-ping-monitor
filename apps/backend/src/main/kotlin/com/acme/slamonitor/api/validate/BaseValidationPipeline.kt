@@ -2,8 +2,10 @@ package com.acme.slamonitor.api.validate
 
 import com.acme.slamonitor.api.dto.ValidationError
 import com.acme.slamonitor.exception.ValidationExecution
+import org.slf4j.LoggerFactory
 
-class ValidationPipelineImpl<T>(
+// todo По приколу переделать на аннотации
+class BaseValidationPipeline<T>(
     private val validators: List<Validator<T>>,
     private val failFast: Boolean = false
 ) : ValidationPipeline<T> {
@@ -19,7 +21,10 @@ class ValidationPipelineImpl<T>(
         }
 
         if (errors.isNotEmpty()) {
+            LOG.error("Validation failed: ${errors.joinToString("\n")}")
             throw ValidationExecution(errors)
         }
     }
 }
+
+private val LOG by lazy { LoggerFactory.getLogger(BaseValidationPipeline::class.java) }

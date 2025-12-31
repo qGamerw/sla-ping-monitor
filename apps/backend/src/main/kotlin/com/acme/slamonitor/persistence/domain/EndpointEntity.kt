@@ -7,10 +7,10 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import jakarta.persistence.Version
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.util.UUID
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
 @Table(name = "endpoints")
@@ -59,7 +59,7 @@ class EndpointEntity(
     @Column(name = "version", nullable = false)
     var version: Long = 0
 ) {
-    /** Заполняет служебные поля при создании записи. */
+
     @PrePersist
     fun onCreate() {
         val now = Instant.now()
@@ -67,7 +67,6 @@ class EndpointEntity(
         updatedAt = now
     }
 
-    /** Обновляет время изменения при сохранении. */
     @PreUpdate
     fun onUpdate() {
         updatedAt = Instant.now()

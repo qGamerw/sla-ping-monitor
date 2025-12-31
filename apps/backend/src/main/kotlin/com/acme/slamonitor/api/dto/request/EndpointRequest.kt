@@ -1,4 +1,4 @@
-package com.acme.slamonitor.api.dto
+package com.acme.slamonitor.api.dto.request
 
 import com.acme.slamonitor.utils.DEFAULT_EXPECTED_STATUS
 import com.acme.slamonitor.utils.DEFAULT_INTERVAL_SEC

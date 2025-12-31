@@ -1,7 +1,7 @@
 package com.acme.slamonitor.api.validate.impl
 
-import com.acme.slamonitor.api.dto.EndpointRequest
 import com.acme.slamonitor.api.dto.ValidationError
+import com.acme.slamonitor.api.dto.request.EndpointRequest
 import com.acme.slamonitor.api.validate.Validator
 import java.net.URI
 

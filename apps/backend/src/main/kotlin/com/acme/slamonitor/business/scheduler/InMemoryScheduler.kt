@@ -5,11 +5,16 @@ import com.acme.slamonitor.business.scheduler.dto.EndpointRef
 import com.acme.slamonitor.business.scheduler.dto.EndpointResult
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
 import com.acme.slamonitor.business.scheduler.dto.LocalState
-import com.acme.slamonitor.business.scheduler.dto.EndpointOk
 import com.acme.slamonitor.configuration.DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME
 import com.acme.slamonitor.persistence.EndpointRepository
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.util.PriorityQueue
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -30,12 +35,6 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.domain.PageRequest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.util.PriorityQueue
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class InMemoryScheduler(
@@ -44,7 +43,7 @@ class InMemoryScheduler(
     private val processor: EndpointProcessor,
     private val clock: Clock = Clock.systemUTC(),
     private val config: SchedulerConfig = SchedulerConfig(),
-    @Qualifier(DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME)
+    @param:Qualifier(DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME)
     private val dbDispatcher: CoroutineDispatcher
 ) {
 
@@ -59,6 +58,7 @@ class InMemoryScheduler(
     private val nudge = Channel<Unit>(Channel.CONFLATED)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    // todo Перенести в appScope
     @PostConstruct
     fun start() {
         scope.launch { refreshLoop() }
@@ -167,7 +167,7 @@ class InMemoryScheduler(
             // cleanup удалённых из БД
             registry.keys.removeIf { id -> !seen.contains(id) }
 
-            LOG.info("registry size={}, heap maybe grows (lazy), workQueue cap={}", registry.size, config.workQueueCapacity)
+            LOG.info("registry size=${registry.size}, heap maybe grows (lazy), workQueue cap=${config.workQueueCapacity}")
 
             delay(config.refreshPeriod.toMillis())
         }
@@ -189,7 +189,6 @@ class InMemoryScheduler(
                     ?.let { Duration.between(now, it).toMillis().coerceAtLeast(1) }
                     ?: 50L
 
-                // ждём "пинок" или таймаут — без deprecated onTimeout/select
                 withTimeoutOrNull(sleepMs) { nudge.receive() }
                 continue
             }
@@ -218,7 +217,7 @@ class InMemoryScheduler(
     private suspend fun workerLoop() {
         while (currentCoroutineContext().isActive) {
             val id = workQueue.receive()
-            val current = registry[id] ?: continue
+            registry[id] ?: continue
 
             val running = registry.computeIfPresent(id) { _, v ->
                 when (v.localState) {
@@ -300,31 +299,41 @@ class InMemoryScheduler(
     }
 
     private fun flushBatch(batch: List<EndpointResult>) {
-        // Таблица-пример:
-        // create table endpoint_checks(
-        //   endpoint_id uuid not null,
-        //   checked_at timestamptz not null,
-        //   ok boolean not null,
-        //   http_status int,
-        //   latency_ms bigint,
-        //   error text
-        // );
-
-        val sql = """
-            insert into endpoint_checks(endpoint_id, checked_at, ok, http_status, latency_ms, error)
-            values (?, ?, ?, ?, ?, ?)
-        """.trimIndent()
-
-        jdbc.batchUpdate(
-            sql,
-            batch.map { r ->
-                when (r) {
-                    is EndpointOk -> arrayOf(r.id, r.checkedAt, true, r.httpStatus, r.latencyMs, null)
-                    is EndpointBad -> arrayOf(r.id, r.checkedAt, false, r.httpStatus, r.latencyMs, r.error)
-                    else -> error("Unknown result type: ${r::class}")
-                }
-            }
-        )
+//        val sql = """
+//        insert into endpoint_checks(endpoint_id, checked_at, ok, http_status, latency_ms, error)
+//        values (?, ?, ?, ?, ?, ?)
+//    """.trimIndent()
+//
+//        jdbc.batchUpdate(sql, object : BatchPreparedStatementSetter {
+//            override fun setValues(ps: PreparedStatement, i: Int) {
+//                val r = batch[i]
+//
+//                ps.setObject(1, r.id) // UUID ок для Postgres
+//
+//                // Instant -> Timestamp (важно)
+//                ps.setTimestamp(2, Timestamp.from(r.checkedAt))
+//
+//                when (r) {
+//                    is EndpointOk -> {
+//                        ps.setBoolean(3, true)
+//                        ps.setInt(4, r.httpStatus)
+//                        ps.setLong(5, r.latencyMs)
+//                        ps.setNull(6, Types.VARCHAR)
+//                    }
+//                    is EndpointBad -> {
+//                        ps.setBoolean(3, false)
+//
+//                        if (r.httpStatus != null) ps.setInt(4, r.httpStatus) else ps.setNull(4, Types.INTEGER)
+//                        if (r.latencyMs != null) ps.setLong(5, r.latencyMs) else ps.setNull(5, Types.BIGINT)
+//
+//                        ps.setString(6, r.error)
+//                    }
+//                    else -> error("Unknown result type: ${r::class}")
+//                }
+//            }
+//
+//            override fun getBatchSize(): Int = batch.size
+//        })
     }
 
     // ===== Heap helpers =====

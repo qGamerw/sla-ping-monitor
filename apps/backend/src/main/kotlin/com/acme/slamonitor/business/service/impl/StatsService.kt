@@ -1,13 +1,13 @@
 package com.acme.slamonitor.business.service.impl
 
-import com.acme.slamonitor.api.dto.StatsResponse
+import com.acme.slamonitor.api.dto.response.StatsResponse
 import com.acme.slamonitor.persistence.CheckResultRepository
-import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.UUID
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import org.springframework.stereotype.Service
 
 @Service
 class StatsService(
