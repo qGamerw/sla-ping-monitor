@@ -19,8 +19,16 @@ class DispatchersConfig {
     fun virtualThreadDispatcher(virtualThreadExecutor: ExecutorService): ExecutorCoroutineDispatcher =
         virtualThreadExecutor.asCoroutineDispatcher()
 
+    @Bean(destroyMethod = "shutdown")
+    fun schedulerDbExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+
+    @Bean(name = [DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME], destroyMethod = "close")
+    fun schedulerDbDispatcher(virtualThreadExecutor: ExecutorService): ExecutorCoroutineDispatcher =
+        virtualThreadExecutor.asCoroutineDispatcher()
+
     @Bean(destroyMethod = "close")
     fun appScope(): AppScope = AppScope()
 }
 
 const val VIRTUAL_THREAD_DISPATCHER_BEAN_NAME = "virtualThreadDispatcher"
+const val DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME = "dbVirtualThreadDispatcher"

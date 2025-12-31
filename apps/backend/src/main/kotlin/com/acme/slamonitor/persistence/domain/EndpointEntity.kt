@@ -6,6 +6,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import java.time.Instant
@@ -54,6 +55,7 @@ class EndpointEntity(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
 
+    @Version
     @Column(name = "version", nullable = false)
     var version: Long = 0
 ) {
@@ -63,13 +65,11 @@ class EndpointEntity(
         val now = Instant.now()
         createdAt = now
         updatedAt = now
-        version = System.nanoTime()
     }
 
     /** Обновляет время изменения при сохранении. */
     @PreUpdate
     fun onUpdate() {
         updatedAt = Instant.now()
-        version = System.nanoTime()
     }
 }
