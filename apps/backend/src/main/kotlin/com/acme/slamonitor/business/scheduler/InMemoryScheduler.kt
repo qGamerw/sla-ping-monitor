@@ -5,10 +5,8 @@ import com.acme.slamonitor.business.scheduler.dto.EndpointRef
 import com.acme.slamonitor.business.scheduler.dto.EndpointResult
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
 import com.acme.slamonitor.business.scheduler.dto.LocalState
-import com.acme.slamonitor.configuration.DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME
 import com.acme.slamonitor.persistence.EndpointRepository
-import jakarta.annotation.PostConstruct
-import jakarta.annotation.PreDestroy
+import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -16,35 +14,28 @@ import java.util.PriorityQueue
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.domain.PageRequest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 
 @Service
 class InMemoryScheduler(
-    private val repo: EndpointRepository,
+    private val repository: EndpointRepository,
     private val jdbc: JdbcTemplate,
     private val processor: EndpointProcessor,
     private val clock: Clock = Clock.systemUTC(),
     private val config: SchedulerConfig = SchedulerConfig(),
-    @param:Qualifier(DB_VIRTUAL_THREAD_DISPATCHER_BEAN_NAME)
-    private val dbDispatcher: CoroutineDispatcher
+    private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher
 ) {
 
     private val registry = ConcurrentHashMap<UUID, EndpointView>()
@@ -56,21 +47,18 @@ class InMemoryScheduler(
     private val outbox = Channel<EndpointResult>(capacity = config.outboxCapacity)
 
     private val nudge = Channel<Unit>(Channel.CONFLATED)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // todo Перенести в appScope
-    @PostConstruct
-    fun start() {
-        scope.launch { refreshLoop() }
-        scope.launch { feedLoop() }
-        repeat(config.workers) { idx ->
-            scope.launch(CoroutineName("endpoint-worker-$idx")) { workerLoop() }
-        }
-        scope.launch { flusherLoop() }
+    suspend fun runLoops(
+        refreshLoopDispatcher: CoroutineDispatcher,
+        feedLoopDispatcher: CoroutineDispatcher,
+        workerDispatcher: CoroutineDispatcher,
+        flusherLoopDispatcher: CoroutineDispatcher
+    ) = coroutineScope {
+        launch(refreshLoopDispatcher) { refreshLoop() }
+        launch(feedLoopDispatcher) { feedLoop() }
+        repeat(config.workers) { launch(workerDispatcher) { workerLoop() } }
+        launch(flusherLoopDispatcher) { flusherLoop() }
     }
-
-    @PreDestroy
-    fun stop() = scope.cancel()
 
     /**
      * Refresh-loop:
@@ -88,8 +76,8 @@ class InMemoryScheduler(
 
             var page = 0
             while (true) {
-                val metas = withContext(dbDispatcher) {
-                    repo.findAllMeta(PageRequest.of(page, config.metaPageSize))
+                val metas = jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting all endpoints") {
+                    repository.findAllMeta(PageRequest.of(page, config.metaPageSize))
                 }
                 if (metas.isEmpty()) break
 
@@ -111,7 +99,9 @@ class InMemoryScheduler(
 
             if (changed.isNotEmpty()) {
                 for (chunk in changed.chunked(500)) {
-                    val entities = withContext(dbDispatcher) { repo.findAllById(chunk) }
+                    val entities = jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting endpoint: $chunk") {
+                        repository.findAllById(chunk)
+                    }
 
                     for (e in entities) {
                         if (!e.enabled) {
@@ -294,11 +284,11 @@ class InMemoryScheduler(
                 batch += next
             }
 
-            withContext(dbDispatcher) { flushBatch(batch) }
+            flushBatch(batch)
         }
     }
 
-    private fun flushBatch(batch: List<EndpointResult>) {
+    private suspend fun flushBatch(batch: List<EndpointResult>) {
 //        val sql = """
 //        insert into endpoint_checks(endpoint_id, checked_at, ok, http_status, latency_ms, error)
 //        values (?, ?, ?, ?, ?, ?)

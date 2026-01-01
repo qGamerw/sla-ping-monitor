@@ -2,6 +2,7 @@ package com.acme.slamonitor.business.client.impl
 
 import com.acme.slamonitor.business.client.EndpointClient
 import com.acme.slamonitor.business.client.dto.RuntimeRequest
+import com.acme.slamonitor.configuration.HTTP_THREAD_DISPATCHER_BEAN_NAME
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.headers
@@ -9,30 +10,37 @@ import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.contentType
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
 @Service
 class KtorEndpointClient(
-    private val http: HttpClient
+    private val http: HttpClient,
+    @param:Qualifier(HTTP_THREAD_DISPATCHER_BEAN_NAME)
+    private val httpDispatcher: CoroutineDispatcher,
 ) : EndpointClient {
 
     override suspend fun call(req: RuntimeRequest): HttpResponse {
-        return http.request(req.url) {
-            method = req.method
+        return withContext(httpDispatcher) {
+            http.request(req.url) {
+                method = req.method
 
-            headers {
-                req.headers.forEach { (k, v) -> append(k, v) }
-            }
+                headers {
+                    req.headers.forEach { (k, v) -> append(k, v) }
+                }
 
-            timeout {
-                req.timeouts.connectMs?.let { connectTimeoutMillis = it }
-                req.timeouts.requestMs?.let { requestTimeoutMillis = it }
-                req.timeouts.socketMs?.let { socketTimeoutMillis = it }
-            }
+                timeout {
+                    req.timeouts.connectMs?.let { connectTimeoutMillis = it }
+                    req.timeouts.requestMs?.let { requestTimeoutMillis = it }
+                    req.timeouts.socketMs?.let { socketTimeoutMillis = it }
+                }
 
-            if (req.body != null) {
-                setBody(req.body)
-                req.contentType?.let { contentType(it) }
+                if (req.body != null) {
+                    setBody(req.body)
+                    req.contentType?.let { contentType(it) }
+                }
             }
         }
     }

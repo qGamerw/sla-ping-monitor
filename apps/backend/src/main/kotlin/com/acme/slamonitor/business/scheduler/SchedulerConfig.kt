@@ -2,7 +2,6 @@ package com.acme.slamonitor.business.scheduler
 
 import java.time.Duration
 
-// todo Перенести в application
 data class SchedulerConfig(
     val workQueueCapacity: Int = 512,
     val outboxCapacity: Int = 1024,

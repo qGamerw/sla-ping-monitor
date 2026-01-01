@@ -24,11 +24,3 @@ management:
     web:
       exposure:
         include: "health,info,metrics"
-
-monitor:
-  scheduler:
-    tick-interval-ms: 1000
-    max-concurrent-checks: 50
-    queue-capacity: 200
-    max-batch-claim: 50
-    lease-ttl-seconds: 60
