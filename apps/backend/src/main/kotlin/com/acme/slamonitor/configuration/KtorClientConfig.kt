@@ -22,7 +22,7 @@ class KtorClientConfig {
         }
 
         install(HttpTimeout)
-        install(Logging) { level = LogLevel.INFO }
+        install(Logging) { level = LogLevel.NONE }
 
         engine {
             // базовые настройки движка (общие для всех запросов)

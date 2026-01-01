@@ -10,10 +10,10 @@ Content-Type: application/json
 
 {
   "name": "Homepage",
-  "url": "https://example.com",
+  "url": "http://localhost:4430/status/227",
   "method": "GET",
   "headers": {
-    "User-Agent": "SLA-Ping-Monitor"
+    "accept": "text/plain"
   },
   "timeoutMs": 3000,
   "expectedStatus": [

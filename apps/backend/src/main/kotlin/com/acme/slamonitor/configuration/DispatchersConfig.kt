@@ -3,6 +3,7 @@ package com.acme.slamonitor.configuration
 import com.acme.slamonitor.scope.AppScope
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.springframework.beans.factory.annotation.Qualifier
@@ -13,25 +14,67 @@ import org.springframework.context.annotation.Configuration
 class DispatchersConfig {
 
     @Bean(name = [ROOT_THREAD_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerRootExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerRootExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-root-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [DB_THREAD_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerDbExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerDbExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-db-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [REFRESH_LOOP_THREAD_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerRefreshLoopExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerRefreshLoopExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-refresh-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [FEED_LOOP_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerFeedLoopExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerFeedLoopExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-feed-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [FLUSHER_LOOP_THREAD_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerFlusherLoopExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerFlusherLoopExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-flusher-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [WORKER_THREAD_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerWorkerExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerWorkerExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-worker-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [HTTP_THREAD_EXECUTOR_BEAN_NAME], destroyMethod = "shutdown")
-    fun schedulerHttpExecutor(): ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
+    fun schedulerHttpExecutor(): ExecutorService {
+        val factory: ThreadFactory = Thread.ofVirtual()
+            .name("sched-http-", 1)
+            .factory()
+
+        return Executors.newThreadPerTaskExecutor(factory)
+    }
 
     @Bean(name = [ROOT_THREAD_DISPATCHER_BEAN_NAME], destroyMethod = "close")
     fun schedulerRootDispatcher(

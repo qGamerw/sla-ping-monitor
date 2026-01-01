@@ -17,7 +17,7 @@ class TransactionalLoggingAspect {
     @Around("@annotation(ann)")
     fun around(pjp: ProceedingJoinPoint, ann: TransactionalLogging): Any? {
         val logMessage = pjp.args.firstOrNull { it is String } as? String ?: ""
-        LOG.info("Transactional: $logMessage is starting call")
+        LOG.info("Transactional: '$logMessage' is starting call")
 
         if (!ann.enabled) return pjp.proceed()
 
@@ -25,12 +25,12 @@ class TransactionalLoggingAspect {
         try {
             return pjp.proceed().also {
                 val elapsedMs = (System.nanoTime() - startNs) / 1_000_000
-                LOG.info("Transactional: $logMessage is completed in $elapsedMs ms")
+                LOG.info("Transactional: '$logMessage' is completed in $elapsedMs ms")
             }
         } catch (ex: Throwable) {
             throw ex.also {
                 val elapsed = (System.nanoTime() - startNs) / 1_000_000
-                LOG.error("Transactional: $logMessage is failed: ${ex.message} ($elapsed ms)", ex)
+                LOG.error("Transactional: '$logMessage' is failed: ${ex.message} ($elapsed ms)", ex)
             }
         }
     }

@@ -22,7 +22,6 @@ class EndpointServiceImpl(
     private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher
 ) : EndpointService {
 
-    /** Создаёт endpoint и подготавливает поля планировщика. */
     override fun create(request: EndpointRequest): Message {
         val id = UUID.randomUUID()
         val entity = EndpointEntity(
@@ -43,7 +42,6 @@ class EndpointServiceImpl(
         return Message("Endpoint has been added to the creation queue")
     }
 
-    /** Обновляет конфигурацию endpoint. */
     override fun update(id: UUID, request: EndpointRequest): Message {
         val entity = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoint $id") {
@@ -69,7 +67,6 @@ class EndpointServiceImpl(
         return Message("Endpoint with id $id has been added to the update queue")
     }
 
-    /** Удаляет endpoint по идентификатору. */
     override fun deleteEndpoint(id: UUID): Message {
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Delete endpoint: $id") {
             endpointRepository.deleteById(id)
@@ -78,7 +75,6 @@ class EndpointServiceImpl(
         return Message("Deletion process is queued for id: $id")
     }
 
-    /** Возвращает endpoint по идентификатору. */
     override fun getEndpoint(id: UUID): EndpointResponse {
         val entity = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoint: $id") {
@@ -90,7 +86,6 @@ class EndpointServiceImpl(
         return MAPPER.toResponse(entity)
     }
 
-    /** Возвращает список всех endpoints. */
     override fun getEndpoints(): List<EndpointResponse> {
         val entities = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoints") {
@@ -100,12 +95,3 @@ class EndpointServiceImpl(
         return MAPPER.toResponses(entities)
     }
 }
-
-
-//@TransactionalEventListener(
-//    phase = TransactionPhase.AFTER_COMMIT,
-//    fallbackExecution = true
-//)
-//fun on(ev: EndpointEvent) {
-//    updateEndpoints.offer(ev)
-//}

@@ -15,7 +15,7 @@ class EndpointClientLoggingBeanPostProcessor : BeanPostProcessor {
     @Throws(BeansException::class)
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any {
         if (bean is EndpointClient && bean !is LoggingEndpointClient) {
-            return LoggingEndpointClient(bean, beanName)
+            return LoggingEndpointClient(bean)
         }
         return bean
     }

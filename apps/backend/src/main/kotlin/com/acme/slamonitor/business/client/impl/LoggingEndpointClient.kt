@@ -9,8 +9,7 @@ import kotlin.system.measureTimeMillis
 import org.slf4j.LoggerFactory
 
 class LoggingEndpointClient(
-    private val delegate: EndpointClient,
-    private val beanName: String
+    private val delegate: EndpointClient
 ) : EndpointClient {
 
     override suspend fun call(req: RuntimeRequest): HttpResponse {
@@ -19,20 +18,14 @@ class LoggingEndpointClient(
         val safeReqHeaders = req.headers.maskSensitive()
         val reqBodyPreview = req.body.preview()
 
-        LOG.info(
-            "➡️ [{}] {} {} bean={} headers={} body={}",
-            rid, req.method.value, req.url, beanName, safeReqHeaders, reqBodyPreview
-        )
+        LOG.info("➡️ [$rid] ${req.method.value} ${req.url} headers=$safeReqHeaders body=$reqBodyPreview")
 
         lateinit var resp: HttpResponse
         val tookMs = measureTimeMillis {
             resp = try {
                 delegate.call(req)
             } catch (t: Throwable) {
-                LOG.error(
-                    "💥 [{}] {} {} bean={} failed: {}",
-                    rid, req.method.value, req.url, beanName, t.message, t
-                )
+                LOG.error("💥 [$rid] ${req.method.value} ${req.url} failed: ${t.message}", t)
                 throw t
             }
         }
@@ -40,7 +33,7 @@ class LoggingEndpointClient(
         val safeRespHeaders = resp.headers.toMap().maskSensitiveList()
 
         LOG.info(
-            "✅ [$rid] ${req.method.value} ${req.url} bean=$beanName -> ${resp.status.value} in $tookMs ms respHeaders=$safeRespHeaders",
+            "✅ [$rid] ${req.method.value} ${req.url} -> ${resp.status.value} in $tookMs ms respHeaders=$safeRespHeaders",
         )
 
         return resp

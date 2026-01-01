@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @EntityScan(basePackages = ["com.acme.slamonitor.persistence"])
 class SlaPingMonitorApplication
 
-/** Запускает Spring Boot приложение. */
 fun main(args: Array<String>) {
     runApplication<SlaPingMonitorApplication>(*args)
 }

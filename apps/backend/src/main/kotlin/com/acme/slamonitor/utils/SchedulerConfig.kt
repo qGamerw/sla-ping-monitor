@@ -1,4 +1,4 @@
-package com.acme.slamonitor.business.scheduler
+package com.acme.slamonitor.utils
 
 import java.time.Duration
 

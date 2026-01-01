@@ -6,6 +6,3 @@ pluginManagement {
         mavenCentral()
     }
 }
-
-org.gradle.parallel=true
-org.gradle.workers.max=8

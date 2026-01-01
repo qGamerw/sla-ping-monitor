@@ -1,12 +1,17 @@
 package com.acme.slamonitor.business.scheduler
 
 import com.acme.slamonitor.business.scheduler.dto.EndpointBad
+import com.acme.slamonitor.business.scheduler.dto.EndpointOk
 import com.acme.slamonitor.business.scheduler.dto.EndpointRef
 import com.acme.slamonitor.business.scheduler.dto.EndpointResult
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
 import com.acme.slamonitor.business.scheduler.dto.LocalState
+import com.acme.slamonitor.utils.SchedulerConfig
 import com.acme.slamonitor.persistence.EndpointRepository
 import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
+import java.sql.PreparedStatement
+import java.sql.Timestamp
+import java.sql.Types
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -25,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
+import org.springframework.jdbc.core.BatchPreparedStatementSetter
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 
@@ -274,10 +280,19 @@ class InMemoryScheduler(
      */
     private suspend fun flusherLoop() {
         while (currentCoroutineContext().isActive) {
-            val batch = ArrayList<EndpointResult>(config.flushBatchSize)
+            val firstOrNull = withTimeoutOrNull(config.flushPeriod.toMillis()) {
+                outbox.receiveCatching().getOrNull() // не бросает при close
+            }
 
-            val first = withTimeoutOrNull(config.flushPeriod.toMillis()) { outbox.receive() } ?: continue
-            batch += first
+            if (firstOrNull == null) {
+                // если канал закрыт и элементов больше не будет — выходим
+                if (outbox.isClosedForReceive) break
+                // иначе это просто таймаут
+                continue
+            }
+
+            val batch = ArrayList<EndpointResult>(config.flushBatchSize)
+            batch += firstOrNull
 
             while (batch.size < config.flushBatchSize) {
                 val next = outbox.tryReceive().getOrNull() ?: break
@@ -288,42 +303,68 @@ class InMemoryScheduler(
         }
     }
 
+
     private suspend fun flushBatch(batch: List<EndpointResult>) {
-//        val sql = """
-//        insert into endpoint_checks(endpoint_id, checked_at, ok, http_status, latency_ms, error)
-//        values (?, ?, ?, ?, ?, ?)
-//    """.trimIndent()
-//
-//        jdbc.batchUpdate(sql, object : BatchPreparedStatementSetter {
-//            override fun setValues(ps: PreparedStatement, i: Int) {
-//                val r = batch[i]
-//
-//                ps.setObject(1, r.id) // UUID ок для Postgres
-//
-//                // Instant -> Timestamp (важно)
-//                ps.setTimestamp(2, Timestamp.from(r.checkedAt))
-//
-//                when (r) {
-//                    is EndpointOk -> {
-//                        ps.setBoolean(3, true)
-//                        ps.setInt(4, r.httpStatus)
-//                        ps.setLong(5, r.latencyMs)
-//                        ps.setNull(6, Types.VARCHAR)
-//                    }
-//                    is EndpointBad -> {
-//                        ps.setBoolean(3, false)
-//
-//                        if (r.httpStatus != null) ps.setInt(4, r.httpStatus) else ps.setNull(4, Types.INTEGER)
-//                        if (r.latencyMs != null) ps.setLong(5, r.latencyMs) else ps.setNull(5, Types.BIGINT)
-//
-//                        ps.setString(6, r.error)
-//                    }
-//                    else -> error("Unknown result type: ${r::class}")
-//                }
-//            }
-//
-//            override fun getBatchSize(): Int = batch.size
-//        })
+        val sql = """
+        insert into check_results(
+            id, endpoint_id, started_at, finished_at,
+            latency_ms, status_code, success, error_type, error_message
+        )
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """.trimIndent()
+
+        jdbc.batchUpdate(sql, object : BatchPreparedStatementSetter {
+            override fun getBatchSize(): Int = batch.size
+
+            override fun setValues(ps: PreparedStatement, i: Int) {
+                val r = batch[i]
+
+                val finishedAt: Instant = r.checkedAt
+
+                // latency: в entity Int (nullable нельзя), поэтому делаем best-effort
+                val latencyLong: Long = when (r) {
+                    is EndpointOk  -> r.latencyMs
+                    is EndpointBad -> r.latencyMs ?: 0L
+                    else -> error("Unknown result type: ${r::class}")
+                }
+
+                // защитимся от переполнения Int (если вдруг latencyLong огромный)
+                val latencyInt: Int = when {
+                    latencyLong <= 0L -> 0
+                    latencyLong >= Int.MAX_VALUE.toLong() -> Int.MAX_VALUE
+                    else -> latencyLong.toInt()
+                }
+
+                val startedAt: Instant = finishedAt.minusMillis(latencyLong.coerceAtLeast(0L))
+
+                ps.setObject(1, UUID.randomUUID())
+                ps.setObject(2, r.id) // UUID для Postgres ок
+                ps.setTimestamp(3, Timestamp.from(startedAt))
+                ps.setTimestamp(4, Timestamp.from(finishedAt))
+                ps.setInt(5, latencyInt)
+
+                when (r) {
+                    is EndpointOk -> {
+                        ps.setInt(6, r.httpStatus)
+                        ps.setBoolean(7, true)
+                        ps.setNull(8, Types.VARCHAR) // error_type
+                        ps.setNull(9, Types.VARCHAR) // error_message
+                    }
+
+                    is EndpointBad -> {
+                        if (r.httpStatus != null) ps.setInt(6, r.httpStatus) else ps.setNull(6, Types.INTEGER)
+                        ps.setBoolean(7, false)
+
+                        // простая классификация: HTTP-ошибка vs "что-то сломалось до ответа"
+                        val errorType = if (r.httpStatus != null) "HTTP" else "EXCEPTION"
+                        ps.setString(8, errorType)
+                        ps.setString(9, r.error)
+                    }
+
+                    else -> error("Unknown result type: ${r::class}")
+                }
+            }
+        })
     }
 
     // ===== Heap helpers =====
