@@ -1,17 +1,18 @@
 package com.acme.slamonitor.business.service.impl
 
 import com.acme.slamonitor.api.dto.request.NodeHeartbeatRequest
+import com.acme.slamonitor.business.service.BackendNodeService
 import com.acme.slamonitor.persistence.BackendNodeRepository
 import com.acme.slamonitor.persistence.domain.BackendNodeEntity
 import java.time.Instant
 import org.springframework.stereotype.Service
 
 @Service
-class BackendNodeService(
+class BackendNodeServiceImpl(
     private val backendNodeRepository: BackendNodeRepository
-) {
-    /** Регистрирует или обновляет heartbeat backend-ноды. */
-    fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity {
+) : BackendNodeService {
+
+    override fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity {
         val now = Instant.now()
         val existing = backendNodeRepository.findById(request.nodeId).orElse(null)
         val entity = existing?.apply {
@@ -28,6 +29,5 @@ class BackendNodeService(
         return backendNodeRepository.save(entity)
     }
 
-    /** Возвращает список всех backend-нод. */
-    fun list(): List<BackendNodeEntity> = backendNodeRepository.findAll()
+    override fun getNodes(): List<BackendNodeEntity> = backendNodeRepository.findAll()
 }

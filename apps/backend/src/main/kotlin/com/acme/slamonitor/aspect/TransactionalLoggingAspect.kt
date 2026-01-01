@@ -1,7 +1,6 @@
 package com.acme.slamonitor.aspect
 
 import com.acme.slamonitor.aspect.annotation.TransactionalLogging
-import kotlin.system.measureTimeMillis
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -17,24 +16,22 @@ class TransactionalLoggingAspect {
 
     @Around("@annotation(ann)")
     fun around(pjp: ProceedingJoinPoint, ann: TransactionalLogging): Any? {
-        if (!ann.enabled) return pjp.proceed()
-
         val logMessage = pjp.args.firstOrNull { it is String } as? String ?: ""
-
         LOG.info("Transactional: $logMessage is starting call")
 
+        if (!ann.enabled) return pjp.proceed()
+
+        val startNs = System.nanoTime()
         try {
-            var result: Any? = null
-            measureTimeMillis {
-                result = pjp.proceed()
-            }.also {
-                LOG.info("Transactional: $logMessage is completed in $it ms")
+            return pjp.proceed().also {
+                val elapsedMs = (System.nanoTime() - startNs) / 1_000_000
+                LOG.info("Transactional: $logMessage is completed in $elapsedMs ms")
             }
-            return result
         } catch (ex: Throwable) {
-            val elapsed = measureTimeMillis { }
-            LOG.error("Transactional: $logMessage is failed: ${ex.message} ($elapsed ms)", ex)
-            throw ex
+            throw ex.also {
+                val elapsed = (System.nanoTime() - startNs) / 1_000_000
+                LOG.error("Transactional: $logMessage is failed: ${ex.message} ($elapsed ms)", ex)
+            }
         }
     }
 }

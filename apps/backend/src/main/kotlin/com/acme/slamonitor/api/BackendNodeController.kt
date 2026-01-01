@@ -2,7 +2,7 @@ package com.acme.slamonitor.api
 
 import com.acme.slamonitor.api.dto.BaseResponse
 import com.acme.slamonitor.api.dto.request.NodeHeartbeatRequest
-import com.acme.slamonitor.business.service.impl.BackendNodeService
+import com.acme.slamonitor.business.service.BackendNodeService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -21,7 +21,7 @@ class BackendNodeController(
 
     /** Возвращает список активных backend-нод. */
     @GetMapping
-    fun getNodes() = BaseResponse(backendNodeService.list())
+    fun getNodes() = BaseResponse(backendNodeService.getNodes())
 
     /** Возвращает заглушку метрик для backend-ноды. */
     @GetMapping("/{nodeId}/metrics")

@@ -46,20 +46,4 @@ class EndpointController(
     @GetMapping
     fun getEndpoints() = BaseResponse(endpointService.getEndpoints())
 
-    // todo Перенести в другой класс
-//    @GetMapping("/{id}/stats")
-//    fun stats(
-//        @PathVariable id: UUID,
-//        @RequestParam windowSec: Long
-//    ) = BaseResponse(statsService.getStats(id, windowSec))
-//
-//    @GetMapping("/{id}/checks")
-//    fun checks(
-//        @PathVariable id: UUID,
-//        @RequestParam from: Instant,
-//        @RequestParam to: Instant
-//    ) = BaseResponse(checkResultRepository.findByEndpointIdAndWindow(id, from, to))
-//
-//    @GetMapping("/summary")
-//    fun summary(@RequestParam windowSec: Long) = BaseResponse("TODO")
 }

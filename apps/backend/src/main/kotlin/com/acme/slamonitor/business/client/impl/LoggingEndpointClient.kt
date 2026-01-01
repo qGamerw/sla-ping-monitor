@@ -1,7 +1,7 @@
 package com.acme.slamonitor.business.client.impl
 
 import com.acme.slamonitor.business.client.EndpointClient
-import com.acme.slamonitor.business.dto.client.RuntimeRequest
+import com.acme.slamonitor.business.client.dto.RuntimeRequest
 import io.ktor.client.statement.HttpResponse
 import io.ktor.util.toMap
 import java.util.UUID

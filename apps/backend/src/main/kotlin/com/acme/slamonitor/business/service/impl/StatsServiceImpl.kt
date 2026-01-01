@@ -1,6 +1,7 @@
 package com.acme.slamonitor.business.service.impl
 
 import com.acme.slamonitor.api.dto.response.StatsResponse
+import com.acme.slamonitor.business.service.StatsService
 import com.acme.slamonitor.persistence.CheckResultRepository
 import java.time.Instant
 import java.util.UUID
@@ -10,11 +11,11 @@ import kotlin.math.min
 import org.springframework.stereotype.Service
 
 @Service
-class StatsService(
+class StatsServiceImpl(
     private val checkResultRepository: CheckResultRepository
-) {
-    /** Возвращает статистику проверок endpoint за окно времени. */
-    fun getStats(endpointId: UUID, windowSec: Long, minSamples: Int = 20): StatsResponse {
+) : StatsService {
+
+    override fun getStats(endpointId: UUID, windowSec: Long, minSamples: Int?): StatsResponse {
         val now = Instant.now()
         val from = now.minusSeconds(windowSec)
         val results = checkResultRepository.findByEndpointIdAndWindow(endpointId, from, now)
@@ -22,12 +23,11 @@ class StatsService(
             results.map { it.latencyMs },
             results.count { !it.success },
             results.lastOrNull()?.statusCode,
-            minSamples
+            minSamples!!
         )
     }
 
-    /** Считает статистику по списку задержек и числу ошибок. */
-    fun calculateStats(
+    override fun calculateStats(
         latencies: List<Int>,
         errorCount: Int,
         lastStatus: Int?,
@@ -73,7 +73,6 @@ class StatsService(
         )
     }
 
-    /** Вычисляет percentile из отсортированного списка. */
     private fun percentile(sorted: List<Int>, percentile: Double): Double {
         if (sorted.isEmpty()) {
             return 0.0

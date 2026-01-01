@@ -1,7 +1,7 @@
 package com.acme.slamonitor.business.client.impl
 
 import com.acme.slamonitor.business.client.EndpointClient
-import com.acme.slamonitor.business.dto.client.RuntimeRequest
+import com.acme.slamonitor.business.client.dto.RuntimeRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.headers

@@ -1,4 +1,4 @@
-package com.acme.slamonitor.business.dto.client
+package com.acme.slamonitor.business.client.dto
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
