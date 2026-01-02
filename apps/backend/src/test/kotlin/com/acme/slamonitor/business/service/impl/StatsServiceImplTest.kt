@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -65,8 +66,8 @@ class StatsServiceImplTest {
         val stats = service.getStats(endpointId, windowSec = 60, minSamples = 2)
 
         assertEquals(3, stats.sampleCount)
-        assertEquals(100, requireNotNull(stats.min))
-        assertEquals(300, requireNotNull(stats.max))
+        assertEquals(100, stats.min ?: fail("min should not be null"))
+        assertEquals(300, stats.max ?: fail("max should not be null"))
         assertEquals(200.0, stats.p50, 0.0001)
         assertEquals(1.0 / 3.0, stats.errorRate, 0.0001)
         assertEquals(500, stats.lastStatus)
