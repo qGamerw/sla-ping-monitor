@@ -5,6 +5,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -16,7 +17,7 @@ class SchedulerLifecycleTest {
     @Test
     fun shouldStartAndStopScheduler() = runTest {
         val scheduler = mockk<InMemoryScheduler>()
-        coEvery { scheduler.runLoops(any(), any(), any(), any()) } returns Unit
+        coEvery { scheduler.runLoops(any(), any(), any(), any()) } returns mockk<Job>()
         val lifecycle = SchedulerLifecycle(
             scheduler = scheduler,
             rootDispatcher = Dispatchers.Unconfined,

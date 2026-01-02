@@ -65,8 +65,8 @@ class StatsServiceImplTest {
         val stats = service.getStats(endpointId, windowSec = 60, minSamples = 2)
 
         assertEquals(3, stats.sampleCount)
-        assertEquals(100, stats.min)
-        assertEquals(300, stats.max)
+        assertEquals(100, requireNotNull(stats.min))
+        assertEquals(300, requireNotNull(stats.max))
         assertEquals(200.0, stats.p50, 0.0001)
         assertEquals(1.0 / 3.0, stats.errorRate, 0.0001)
         assertEquals(500, stats.lastStatus)

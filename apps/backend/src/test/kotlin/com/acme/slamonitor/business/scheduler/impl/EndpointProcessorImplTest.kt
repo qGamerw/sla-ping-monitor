@@ -6,6 +6,7 @@ import com.acme.slamonitor.business.scheduler.dto.EndpointBad
 import com.acme.slamonitor.business.scheduler.dto.EndpointOk
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.mockk.coEvery
 import io.mockk.mockk

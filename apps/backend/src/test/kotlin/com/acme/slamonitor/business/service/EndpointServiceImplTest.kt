@@ -58,7 +58,12 @@ class EndpointServiceImplTest {
         val request = EndpointRequest(name = "new", url = "https://new.example.com", method = "POST", timeoutMs = 2000)
         val blockSlot = slot<() -> Unit>()
 
-        coEvery { jpaAsyncIoWorker.executeWithTransactionalSupplier(match { it.startsWith("Get endpoint") }, any()) } returns Optional.of(entity)
+        coEvery {
+            jpaAsyncIoWorker.executeWithTransactionalSupplier<Optional<EndpointEntity>>(
+                match { it.startsWith("Get endpoint") },
+                any()
+            )
+        } returns Optional.of(entity)
         every { jpaAsyncIoWorker.executeWithTransactionalConsumer(match { it.startsWith("Update endpoint") }, capture(blockSlot)) } answers {
             blockSlot.captured.invoke()
         }
@@ -79,7 +84,12 @@ class EndpointServiceImplTest {
         val id = UUID.randomUUID()
         val request = EndpointRequest(name = "new", url = "https://new.example.com")
 
-        coEvery { jpaAsyncIoWorker.executeWithTransactionalSupplier(match { it.startsWith("Get endpoint") }, any()) } returns Optional.empty()
+        coEvery {
+            jpaAsyncIoWorker.executeWithTransactionalSupplier<Optional<EndpointEntity>>(
+                match { it.startsWith("Get endpoint") },
+                any()
+            )
+        } returns Optional.empty()
 
         val exception = assertThrows(EndpointException::class.java) {
             service.update(id, request)
@@ -108,7 +118,12 @@ class EndpointServiceImplTest {
     fun shouldThrowWhenEndpointMissingOnGet() {
         val id = UUID.randomUUID()
 
-        coEvery { jpaAsyncIoWorker.executeWithTransactionalSupplier(match { it.startsWith("Get endpoint") }, any()) } returns Optional.empty()
+        coEvery {
+            jpaAsyncIoWorker.executeWithTransactionalSupplier<Optional<EndpointEntity>>(
+                match { it.startsWith("Get endpoint") },
+                any()
+            )
+        } returns Optional.empty()
 
         val exception = assertThrows(EndpointException::class.java) {
             service.getEndpoint(id)
