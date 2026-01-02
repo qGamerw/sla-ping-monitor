@@ -5,8 +5,14 @@ import com.acme.slamonitor.api.dto.request.EndpointRequest
 import com.acme.slamonitor.api.validate.Validator
 import java.net.URI
 
+/**
+ * Проверяет корректность и допустимость URL эндпоинта.
+ */
 class EndpointUrlValidator : Validator<EndpointRequest> {
 
+    /**
+     * Возвращает список ошибок по полю url.
+     */
     override fun validate(request: EndpointRequest): List<ValidationError> {
         val url = request.url.trim()
         if (url.isEmpty()) {

@@ -10,9 +10,15 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
+/**
+ * Централизованный обработчик исключений API.
+ */
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
+    /**
+     * Обрабатывает необработанные исключения и возвращает 500.
+     */
     @ExceptionHandler(Exception::class)
     fun handleAny(ex: Exception, request: HttpServletRequest): ResponseEntity<BaseResponse<Nothing>> {
         LOG.error("Unhandled exception: ${request.method} ${request.requestURI}")
@@ -22,6 +28,9 @@ class GlobalExceptionHandler {
             .body(BaseResponse.failure(ApiError(ex.message)))
     }
 
+    /**
+     * Обрабатывает ошибки валидации и возвращает 400.
+     */
     @ExceptionHandler(ValidationExecution::class)
     fun handleValidation(ex: ValidationExecution, request: HttpServletRequest): ResponseEntity<BaseResponse<Nothing>> {
         LOG.error("Unhandled exception: ${request.method} ${request.requestURI}")

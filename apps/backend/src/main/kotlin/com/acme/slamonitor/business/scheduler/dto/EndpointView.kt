@@ -4,6 +4,9 @@ import com.acme.slamonitor.persistence.domain.EndpointEntity
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * Снимок эндпоинта, используемый в планировщике.
+ */
 data class EndpointView(
     val id: UUID,
     val dbVersion: Long,
@@ -21,6 +24,9 @@ data class EndpointView(
     val failCount: Int,
     val localState: LocalState
 ) {
+    /**
+     * Создает view из сущности и локального состояния.
+     */
     constructor(entity: EndpointEntity, nextRunAt: Instant, failCount: Int, preservedState: LocalState) : this(
         id = entity.id,
         dbVersion = entity.version,

@@ -34,6 +34,9 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.jdbc.core.BatchPreparedStatementSetter
 import org.springframework.jdbc.core.JdbcTemplate
 
+/**
+ * Планировщик проверок в памяти с очередью, воркерами и flush в БД.
+ */
 open class InMemoryScheduler(
     private val repository: EndpointRepository,
     private val jdbcTemplate: JdbcTemplate,
@@ -49,6 +52,9 @@ open class InMemoryScheduler(
     private val registry = ConcurrentHashMap<UUID, EndpointView>()
     private val readyHeap = PriorityQueue(compareBy<EndpointRef> { it.nextRunAt }.thenBy { it.id })
 
+    /**
+     * Запускает все циклы планировщика в отдельных корутинах.
+     */
     suspend fun runLoops(
         refreshLoopDispatcher: CoroutineDispatcher,
         feedLoopDispatcher: CoroutineDispatcher,
@@ -61,6 +67,9 @@ open class InMemoryScheduler(
         launch(flusherLoopDispatcher) { flusherLoop() }
     }
 
+    /**
+     * Периодически синхронизирует локальный реестр с БД.
+     */
     private suspend fun refreshLoop() {
         while (currentCoroutineContext().isActive) {
             val now = Instant.now(CLOCK)
@@ -132,6 +141,9 @@ open class InMemoryScheduler(
         }
     }
 
+    /**
+     * Подает готовые эндпоинты в очередь работы.
+     */
     private suspend fun feedLoop() {
         while (currentCoroutineContext().isActive) {
             val now = Instant.now(CLOCK)
@@ -159,6 +171,9 @@ open class InMemoryScheduler(
         }
     }
 
+    /**
+     * Выполняет проверки эндпоинтов и отправляет результаты в outbox.
+     */
     private suspend fun workerLoop() {
         while (currentCoroutineContext().isActive) {
             val id = workQueue.receive()
@@ -218,6 +233,9 @@ open class InMemoryScheduler(
         }
     }
 
+    /**
+     * Собирает результаты в батчи и пишет их в БД.
+     */
     private suspend fun flusherLoop() {
         while (currentCoroutineContext().isActive) {
             val firstOrNull = withTimeoutOrNull(CONFIG.flushPeriod.toMillis()) {
@@ -241,10 +259,19 @@ open class InMemoryScheduler(
         }
     }
 
+    /**
+     * Сохраняет батч результатов в БД.
+     */
     private suspend fun flushBatch(batch: List<EndpointResult>) {
         jdbcTemplate.batchUpdate(SQL_QUEUE, object : BatchPreparedStatementSetter {
+            /**
+             * Размер батча для вставки.
+             */
             override fun getBatchSize(): Int = batch.size
 
+            /**
+             * Заполняет параметры SQL для элемента батча.
+             */
             override fun setValues(ps: PreparedStatement, i: Int) {
                 val result = batch[i]
 
@@ -290,18 +317,30 @@ open class InMemoryScheduler(
         })
     }
 
+    /**
+     * Добавляет элемент в heap с блокировкой.
+     */
     private suspend fun heapAdd(ref: EndpointRef) {
         heapMutex.withLock { readyHeap.add(ref) }
     }
 
+    /**
+     * Возвращает следующий элемент, если он уже должен выполниться.
+     */
     private suspend fun heapPollIfDue(now: Instant): EndpointRef? =
         heapMutex.withLock {
             val top = readyHeap.peek() ?: return@withLock null
             if (top.nextRunAt <= now) readyHeap.poll() else null
         }
 
+    /**
+     * Возвращает ближайшее время запуска из heap.
+     */
     private suspend fun heapPeekNextRunAt(): Instant? = heapMutex.withLock { readyHeap.peek()?.nextRunAt }
 
+    /**
+     * Переводит эндпоинт в состояние IN_FLIGHT, если ref актуален.
+     */
     private fun markInFlightIfActual(ref: EndpointRef, now: Instant): Boolean {
         val updated = registry.computeIfPresent(ref.id) { _, view ->
             val ok =
@@ -319,6 +358,9 @@ open class InMemoryScheduler(
     }
 }
 
+/**
+ * Возвращает актуальный счетчик ошибок для обновляемого эндпоинта.
+ */
 private fun EndpointView?.getFailCount(
     changeEntity: EndpointEntity
 ): Int = when {
@@ -327,6 +369,9 @@ private fun EndpointView?.getFailCount(
     else -> this.failCount
 }
 
+/**
+ * Вычисляет следующее время запуска с учетом версии записи.
+ */
 private fun EndpointView?.getNextRunAt(
     now: Instant,
     changeEntity: EndpointEntity

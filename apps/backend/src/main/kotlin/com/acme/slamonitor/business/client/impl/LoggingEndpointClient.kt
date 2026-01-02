@@ -8,10 +8,16 @@ import java.util.UUID
 import kotlin.system.measureTimeMillis
 import org.slf4j.LoggerFactory
 
+/**
+ * Декоратор клиента, который логирует запросы и ответы.
+ */
 class LoggingEndpointClient(
     private val delegate: EndpointClient
 ) : EndpointClient {
 
+    /**
+     * Выполняет запрос и пишет лог с безопасной маскировкой заголовков.
+     */
     override suspend fun call(req: RuntimeRequest): HttpResponse {
         val rid = UUID.randomUUID().toString().substring(0, 8)
 
@@ -42,6 +48,9 @@ class LoggingEndpointClient(
 
 private val LOG by lazy { LoggerFactory.getLogger(LoggingEndpointClient::class.java) }
 
+/**
+ * Маскирует чувствительные заголовки запроса.
+ */
 private fun Map<String, String>.maskSensitive(): Map<String, String> =
     mapValues { (k, v) ->
         if (k.equals("Authorization", true) ||
@@ -50,6 +59,9 @@ private fun Map<String, String>.maskSensitive(): Map<String, String> =
         ) "***" else v
     }
 
+/**
+ * Маскирует чувствительные заголовки ответа.
+ */
 private fun Map<String, List<String>>.maskSensitiveList(): Map<String, List<String>> =
     mapValues { (k, v) ->
         if (k.equals("Set-Cookie", true) ||
@@ -58,6 +70,9 @@ private fun Map<String, List<String>>.maskSensitiveList(): Map<String, List<Stri
         ) listOf("***") else v
     }
 
+/**
+ * Делает безопасный превью тела запроса.
+ */
 private fun Any?.preview(max: Int = 512): String = when (this) {
     null -> "null"
     is String -> if (length <= max) this else take(max) + "…(${length} chars)"

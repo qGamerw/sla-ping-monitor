@@ -44,6 +44,10 @@ dependencies {
 
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("com.ninja-squad:springmockk:4.0.2")
+    testImplementation("com.h2database:h2")
 }
 
 kotlin {

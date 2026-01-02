@@ -15,11 +15,17 @@ import com.acme.slamonitor.utils.DEFAULT_TIMEOUT_MS
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
 
+/**
+ * Реализация сервиса эндпоинтов с асинхронной JPA-очередью.
+ */
 open class EndpointServiceImpl(
     private val endpointRepository: EndpointRepository,
     private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher
 ) : EndpointService {
 
+    /**
+     * Создает эндпоинт и ставит сохранение в очередь.
+     */
     override fun create(request: EndpointRequest): Message {
         val id = UUID.randomUUID()
         val entity = EndpointEntity(
@@ -40,6 +46,9 @@ open class EndpointServiceImpl(
         return Message("Endpoint has been added to the creation queue")
     }
 
+    /**
+     * Обновляет эндпоинт и ставит сохранение в очередь.
+     */
     override fun update(id: UUID, request: EndpointRequest): Message {
         val entity = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoint $id") {
@@ -65,6 +74,9 @@ open class EndpointServiceImpl(
         return Message("Endpoint with id $id has been added to the update queue")
     }
 
+    /**
+     * Ставит удаление эндпоинта в очередь.
+     */
     override fun deleteEndpoint(id: UUID): Message {
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Delete endpoint: $id") {
             endpointRepository.deleteById(id)
@@ -73,6 +85,9 @@ open class EndpointServiceImpl(
         return Message("Deletion process is queued for id: $id")
     }
 
+    /**
+     * Возвращает эндпоинт по идентификатору.
+     */
     override fun getEndpoint(id: UUID): EndpointResponse {
         val entity = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoint: $id") {
@@ -84,6 +99,9 @@ open class EndpointServiceImpl(
         return MAPPER.toResponse(entity)
     }
 
+    /**
+     * Возвращает список всех эндпоинтов.
+     */
     override fun getEndpoints(): List<EndpointResponse> {
         val entities = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoints") {

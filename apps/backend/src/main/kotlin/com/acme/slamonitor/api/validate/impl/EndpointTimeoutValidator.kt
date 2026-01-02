@@ -4,8 +4,14 @@ import com.acme.slamonitor.api.dto.ValidationError
 import com.acme.slamonitor.api.dto.request.EndpointRequest
 import com.acme.slamonitor.api.validate.Validator
 
+/**
+ * Проверяет диапазон допустимого таймаута запроса.
+ */
 class EndpointTimeoutValidator : Validator<EndpointRequest> {
 
+    /**
+     * Возвращает ошибку, если таймаут выходит за допустимые границы.
+     */
     override fun validate(request: EndpointRequest): List<ValidationError> {
         val timeout = request.timeoutMs ?: return emptyList()
         if (timeout !in MIN_TIMEOUT_MS..MAX_TIMEOUT_MS) {
