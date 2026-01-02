@@ -60,7 +60,6 @@ class StatsServiceImpl(
         }
     }
 
-
     private fun calculateStats(
         latencies: List<Int>,
         errorCount: Int,
