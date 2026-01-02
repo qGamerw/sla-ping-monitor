@@ -11,9 +11,9 @@ services:
   backend:
     image: sla-ping-monitor-backend:local
     environment:
-      DB_URL: jdbc:postgresql://db:5432/sla_ping_monitor
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/sla_ping_monitor
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
     ports:
       - "8080:8080"
     depends_on:

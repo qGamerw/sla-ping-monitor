@@ -1,1 +1,8 @@
-# TODO: define dev overlay
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patchesStrategicMerge:
+  - patch-replicas.yaml
+  - patch-resources.yaml
+  - patch-images.yaml

@@ -1,1 +1,14 @@
-# TODO: define postgres service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: sla-postgres
+spec:
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: sla-postgres
+  type: ClusterIP

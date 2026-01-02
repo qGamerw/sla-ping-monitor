@@ -1,1 +1,8 @@
-# TODO: define backend configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sla-backend-config
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sla_ping_monitor
+  SPRING_DATASOURCE_USERNAME: postgres
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update

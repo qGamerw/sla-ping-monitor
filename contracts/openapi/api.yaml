@@ -2,4 +2,610 @@ openapi: 3.0.3
 info:
   title: SLA Ping Monitor API
   version: 0.0.1
-paths: {}
+  description: API для управления эндпоинтами мониторинга, статистикой и backend-нодами.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/endpoints:
+    post:
+      summary: Создать эндпоинт мониторинга
+      tags: [Endpoints]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointRequest'
+      responses:
+        '200':
+          description: Эндпоинт создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      summary: Получить список эндпоинтов
+      tags: [Endpoints]
+      responses:
+        '200':
+          description: Список эндпоинтов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEndpointList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/endpoints/{id}:
+    get:
+      summary: Получить эндпоинт по идентификатору
+      tags: [Endpoints]
+      parameters:
+        - $ref: '#/components/parameters/EndpointId'
+      responses:
+        '200':
+          description: Эндпоинт найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEndpoint'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      summary: Обновить эндпоинт
+      tags: [Endpoints]
+      parameters:
+        - $ref: '#/components/parameters/EndpointId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointRequest'
+      responses:
+        '200':
+          description: Эндпоинт обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      summary: Удалить эндпоинт
+      tags: [Endpoints]
+      parameters:
+        - $ref: '#/components/parameters/EndpointId'
+      responses:
+        '200':
+          description: Эндпоинт удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseMessage'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/endpoints/{id}/stats:
+    get:
+      summary: Получить статистику по эндпоинту за окно
+      tags: [Stats]
+      parameters:
+        - $ref: '#/components/parameters/EndpointId'
+        - name: windowSec
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Статистика по эндпоинту
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseStats'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/endpoints/{id}/checks:
+    get:
+      summary: Получить список проверок эндпоинта за период
+      tags: [Stats]
+      parameters:
+        - $ref: '#/components/parameters/EndpointId'
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Список проверок
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseCheckResultList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/endpoints/summary:
+    get:
+      summary: Получить краткое резюме по эндпоинтам
+      tags: [Stats]
+      parameters:
+        - name: windowSec
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Краткое резюме
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEndpointSummaryList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/nodes/heartbeat:
+    post:
+      summary: Принять heartbeat от backend-ноды
+      tags: [Nodes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeHeartbeatRequest'
+      responses:
+        '200':
+          description: Heartbeat принят
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseBackendNode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/nodes:
+    get:
+      summary: Получить список backend-нод
+      tags: [Nodes]
+      responses:
+        '200':
+          description: Список нод
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseBackendNodeList'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/nodes/{nodeId}/metrics:
+    get:
+      summary: Получить метрики backend-ноды (заглушка)
+      tags: [Nodes]
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Метрики backend-ноды
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackendNodeMetrics'
+components:
+  parameters:
+    EndpointId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BaseResponseError'
+    InternalError:
+      description: Внутренняя ошибка
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BaseResponseError'
+  schemas:
+    BaseResponseMessage:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          $ref: '#/components/schemas/Message'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseEndpoint:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          $ref: '#/components/schemas/EndpointResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseEndpointList:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseStats:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          $ref: '#/components/schemas/StatsResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseCheckResultList:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckResultResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseEndpointSummaryList:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointSummaryResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseBackendNode:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          $ref: '#/components/schemas/BackendNodeResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseBackendNodeList:
+      type: object
+      required: [susses]
+      properties:
+        susses:
+          type: boolean
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackendNodeResponse'
+        error:
+          $ref: '#/components/schemas/ApiError'
+    BaseResponseError:
+      type: object
+      required: [susses, error]
+      properties:
+        susses:
+          type: boolean
+          example: false
+        body:
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ApiError'
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    ApiError:
+      type: object
+      properties:
+        message:
+          description: Строка ошибки или список ошибок валидации
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                $ref: '#/components/schemas/ValidationError'
+            - type: object
+      required: [message]
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+          nullable: true
+        code:
+          type: string
+        message:
+          type: string
+      required: [code, message]
+    EndpointRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        method:
+          type: string
+          default: GET
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          nullable: true
+        timeoutMs:
+          type: integer
+          format: int32
+        expectedStatus:
+          type: array
+          items:
+            type: integer
+            format: int32
+        intervalSec:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required: [name, url]
+    EndpointResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        url:
+          type: string
+        method:
+          type: string
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          nullable: true
+        timeoutMs:
+          type: integer
+          format: int32
+        expectedStatus:
+          type: array
+          items:
+            type: integer
+            format: int32
+        intervalSec:
+          type: integer
+          format: int32
+        enabled:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+        nextRunAt:
+          type: string
+          format: date-time
+          nullable: true
+        leaseOwner:
+          type: string
+          nullable: true
+        leaseUntil:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - url
+        - method
+        - timeoutMs
+        - expectedStatus
+        - intervalSec
+        - enabled
+        - createdAt
+        - updatedAt
+    StatsResponse:
+      type: object
+      properties:
+        sampleCount:
+          type: integer
+          format: int32
+        p50:
+          type: number
+          format: double
+          nullable: true
+        p95:
+          type: number
+          format: double
+          nullable: true
+        p99:
+          type: number
+          format: double
+          nullable: true
+        avg:
+          type: number
+          format: double
+          nullable: true
+        min:
+          type: integer
+          format: int32
+          nullable: true
+        max:
+          type: integer
+          format: int32
+          nullable: true
+        errorRate:
+          type: number
+          format: double
+          nullable: true
+        lastStatus:
+          type: integer
+          format: int32
+          nullable: true
+        insufficientSamples:
+          type: boolean
+      required: [sampleCount, insufficientSamples]
+    CheckResultResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        endpointId:
+          type: string
+          format: uuid
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        latencyMs:
+          type: integer
+          format: int32
+        statusCode:
+          type: integer
+          format: int32
+          nullable: true
+        success:
+          type: boolean
+        errorType:
+          type: string
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+      required:
+        - id
+        - endpointId
+        - startedAt
+        - finishedAt
+        - latencyMs
+        - success
+    EndpointSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        url:
+          type: string
+        enabled:
+          type: boolean
+        lastCheckAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastStatusCode:
+          type: integer
+          format: int32
+          nullable: true
+        lastSuccess:
+          type: boolean
+          nullable: true
+        windowStats:
+          $ref: '#/components/schemas/StatsResponse'
+      required: [id, name, url, enabled]
+    BackendNodeResponse:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        baseUrl:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        lastHeartbeatAt:
+          type: string
+          format: date-time
+        meta:
+          type: object
+          additionalProperties: {}
+          nullable: true
+      required: [nodeId, baseUrl, startedAt, lastHeartbeatAt]
+    NodeHeartbeatRequest:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        baseUrl:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        meta:
+          type: object
+          additionalProperties: {}
+          nullable: true
+      required: [nodeId, baseUrl, startedAt]
+    BackendNodeMetrics:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        queueSize:
+          type: integer
+          format: int32
+        activeChecks:
+          type: integer
+          format: int32
+        checksPerMin:
+          type: integer
+          format: int32
+      required: [nodeId, queueSize, activeChecks, checksPerMin]

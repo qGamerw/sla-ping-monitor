@@ -1,1 +1,10 @@
-# TODO: define prod overlay
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ../../base/backend/hpa.yaml
+patchesStrategicMerge:
+  - patch-replicas.yaml
+  - patch-resources.yaml
+  - patch-images.yaml
+  - patch-hpa.yaml

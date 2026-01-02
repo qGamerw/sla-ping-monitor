@@ -1,1 +1,6 @@
-# TODO: define frontend configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sla-frontend-config
+data:
+  NEXT_PUBLIC_API_BASE_URL: http://backend:8080
