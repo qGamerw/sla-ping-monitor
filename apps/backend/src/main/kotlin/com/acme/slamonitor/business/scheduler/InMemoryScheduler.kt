@@ -33,10 +33,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.jdbc.core.BatchPreparedStatementSetter
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.stereotype.Service
 
-@Service
-class InMemoryScheduler(
+open class InMemoryScheduler(
     private val repository: EndpointRepository,
     private val jdbcTemplate: JdbcTemplate,
     private val processor: EndpointProcessor,

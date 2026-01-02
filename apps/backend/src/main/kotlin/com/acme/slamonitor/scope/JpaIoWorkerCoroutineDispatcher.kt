@@ -1,17 +1,12 @@
 package com.acme.slamonitor.scope
 
-import com.acme.slamonitor.configuration.DB_THREAD_DISPATCHER_BEAN_NAME
 import com.acme.slamonitor.persistence.util.JpaIoTransactionalLogging
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.stereotype.Component
 
-@Component
-class JpaIoWorkerCoroutineDispatcher(
+open class JpaIoWorkerCoroutineDispatcher(
     private val appScope: AppScope,
-    @param:Qualifier(DB_THREAD_DISPATCHER_BEAN_NAME)
     private val dispatcher: CoroutineDispatcher,
     private val jpaWorkerLogging: JpaIoTransactionalLogging
 ) {

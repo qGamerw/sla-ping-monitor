@@ -12,10 +12,8 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
 import java.time.Instant
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
 
-@Service
-class EndpointProcessorImpl(
+open class EndpointProcessorImpl(
     private val client: EndpointClient
 ) : EndpointProcessor {
     override suspend fun check(endpoint: EndpointView): EndpointResult {

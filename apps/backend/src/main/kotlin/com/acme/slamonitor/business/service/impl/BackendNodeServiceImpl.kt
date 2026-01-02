@@ -5,10 +5,8 @@ import com.acme.slamonitor.business.service.BackendNodeService
 import com.acme.slamonitor.persistence.BackendNodeRepository
 import com.acme.slamonitor.persistence.domain.BackendNodeEntity
 import java.time.Instant
-import org.springframework.stereotype.Service
 
-@Service
-class BackendNodeServiceImpl(
+open class BackendNodeServiceImpl(
     private val backendNodeRepository: BackendNodeRepository
 ) : BackendNodeService {
 

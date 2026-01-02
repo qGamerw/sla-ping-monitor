@@ -2,7 +2,6 @@ package com.acme.slamonitor.business.client.impl
 
 import com.acme.slamonitor.business.client.EndpointClient
 import com.acme.slamonitor.business.client.dto.RuntimeRequest
-import com.acme.slamonitor.configuration.HTTP_THREAD_DISPATCHER_BEAN_NAME
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.headers
@@ -12,13 +11,9 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.stereotype.Service
 
-@Service
-class KtorEndpointClient(
+open class KtorEndpointClient(
     private val http: HttpClient,
-    @param:Qualifier(HTTP_THREAD_DISPATCHER_BEAN_NAME)
     private val httpDispatcher: CoroutineDispatcher,
 ) : EndpointClient {
 

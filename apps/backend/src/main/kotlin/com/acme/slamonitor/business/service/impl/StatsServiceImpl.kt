@@ -11,10 +11,8 @@ import java.util.UUID
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
-import org.springframework.stereotype.Service
 
-@Service
-class StatsServiceImpl(
+open class StatsServiceImpl(
     private val checkResultRepository: CheckResultRepository,
     private val endpointRepository: EndpointRepository
 ) : StatsService {
@@ -38,7 +36,7 @@ class StatsServiceImpl(
     override fun getSummery(windowSec: Long): List<EndpointSummaryResponse> {
         val now = Instant.now()
         val from = now.minusSeconds(windowSec)
-        val statsByEndpoint = checkResultRepository.findByWindow(from, now).groupBy { it.endpoint }
+        val statsByEndpoint = checkResultRepository.findByWindow(from, now).groupBy { it.endpoint.id }
 
         return endpointRepository.findAll().map { endpoint ->
             val lastCheck = checkResultRepository.findTopByEndpoint_IdOrderByFinishedAtDesc(endpoint.id)
@@ -51,9 +49,9 @@ class StatsServiceImpl(
                 lastStatusCode = lastCheck?.statusCode,
                 lastSuccess = lastCheck?.success,
                 windowStats = calculateStats(
-                    statsByEndpoint[endpoint]?.map { it.latencyMs } ?: emptyList(),
-                    statsByEndpoint[endpoint]?.count { !it.success } ?: -1,
-                    statsByEndpoint[endpoint]?.lastOrNull()?.statusCode ?: -1,
+                    statsByEndpoint[endpoint.id]?.map { it.latencyMs } ?: emptyList(),
+                    statsByEndpoint[endpoint.id]?.count { !it.success } ?: -1,
+                    statsByEndpoint[endpoint.id]?.lastOrNull()?.statusCode ?: -1,
                     20
                 )
             )

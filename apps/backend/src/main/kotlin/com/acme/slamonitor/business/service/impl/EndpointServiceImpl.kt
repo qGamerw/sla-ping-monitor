@@ -14,10 +14,8 @@ import com.acme.slamonitor.utils.DEFAULT_INTERVAL_SEC
 import com.acme.slamonitor.utils.DEFAULT_TIMEOUT_MS
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
-import org.springframework.stereotype.Service
 
-@Service
-class EndpointServiceImpl(
+open class EndpointServiceImpl(
     private val endpointRepository: EndpointRepository,
     private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher
 ) : EndpointService {

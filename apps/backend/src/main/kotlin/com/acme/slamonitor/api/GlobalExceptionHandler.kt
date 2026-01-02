@@ -1,4 +1,4 @@
-package com.acme.slamonitor.configuration
+package com.acme.slamonitor.api
 
 import com.acme.slamonitor.api.dto.ApiError
 import com.acme.slamonitor.api.dto.BaseResponse
