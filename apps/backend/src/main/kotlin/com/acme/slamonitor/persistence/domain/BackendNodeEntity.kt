@@ -8,6 +8,9 @@ import java.time.Instant
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
+/**
+ * JPA-сущность backend-ноды.
+ */
 @Entity
 @Table(name = "backend_nodes")
 class BackendNodeEntity(

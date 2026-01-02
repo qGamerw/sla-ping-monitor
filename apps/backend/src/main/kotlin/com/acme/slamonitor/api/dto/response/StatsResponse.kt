@@ -1,5 +1,8 @@
 package com.acme.slamonitor.api.dto.response
 
+/**
+ * Статистика по проверкам за заданное окно.
+ */
 data class StatsResponse(
     val sampleCount: Int = 0,
     val p50: Double? = null,

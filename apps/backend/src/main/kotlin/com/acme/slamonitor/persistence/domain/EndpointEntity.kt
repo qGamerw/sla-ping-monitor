@@ -12,6 +12,9 @@ import java.util.UUID
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
+/**
+ * JPA-сущность эндпоинта мониторинга.
+ */
 @Entity
 @Table(name = "endpoints")
 class EndpointEntity(
@@ -60,6 +63,9 @@ class EndpointEntity(
     var version: Long = 0
 ) {
 
+    /**
+     * Заполняет даты создания и обновления перед вставкой.
+     */
     @PrePersist
     fun onCreate() {
         val now = Instant.now()
@@ -67,6 +73,9 @@ class EndpointEntity(
         updatedAt = now
     }
 
+    /**
+     * Обновляет дату изменения перед обновлением.
+     */
     @PreUpdate
     fun onUpdate() {
         updatedAt = Instant.now()

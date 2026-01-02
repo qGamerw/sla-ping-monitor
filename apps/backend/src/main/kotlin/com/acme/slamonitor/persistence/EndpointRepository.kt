@@ -7,8 +7,14 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 
+/**
+ * Репозиторий для эндпоинтов.
+ */
 interface EndpointRepository : JpaRepository<EndpointEntity, UUID> {
 
+    /**
+     * Возвращает метаданные эндпоинтов для планировщика.
+     */
     @Query(
         """
         select e.id as id,

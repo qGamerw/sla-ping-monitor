@@ -10,11 +10,17 @@ import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.util.ContentCachingRequestWrapper
 import org.springframework.web.util.ContentCachingResponseWrapper
 
+/**
+ * Логирует HTTP-запросы и ответы с безопасной обработкой тела.
+ */
 class HttpLoggingFilter(
     private val maxPayloadChars: Int = 8_192,
     private val includeHeaders: Boolean = true
 ) : OncePerRequestFilter() {
 
+    /**
+     * Исключает служебные пути из логирования.
+     */
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
         val p = request.requestURI ?: return false
         return p.startsWith("/actuator") ||
@@ -23,6 +29,9 @@ class HttpLoggingFilter(
                 p.startsWith("/favicon")
     }
 
+    /**
+     * Оборачивает запрос/ответ и пишет лог после обработки.
+     */
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -74,6 +83,9 @@ class HttpLoggingFilter(
         }
     }
 
+    /**
+     * Читает заголовки запроса в map.
+     */
     private fun extractRequestHeaders(request: HttpServletRequest): Map<String, String> {
         val names = request.headerNames ?: return emptyMap()
         val map = LinkedHashMap<String, String>()
@@ -84,9 +96,15 @@ class HttpLoggingFilter(
         return map
     }
 
+    /**
+     * Читает заголовки ответа в map.
+     */
     private fun extractResponseHeaders(response: HttpServletResponse): Map<String, String> =
         response.headerNames.associateWith { response.getHeader(it) }
 
+    /**
+     * Безопасно превращает тело в строку или возвращает заглушку.
+     */
     private fun safeBodyFrom(bytes: ByteArray, encoding: String?, contentType: String?): String {
         if (bytes.isEmpty()) return ""
 
@@ -107,6 +125,9 @@ class HttpLoggingFilter(
             .getOrElse { "<unreadable body: ${it::class.simpleName}>" }
     }
 
+    /**
+     * Обрезает строку до максимального размера.
+     */
     private fun truncate(s: String): String =
         if (s.length <= maxPayloadChars) s else s.take(maxPayloadChars) + "…(truncated)"
 }

@@ -12,11 +12,17 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * Реализация сервиса статистики на основе репозиториев.
+ */
 open class StatsServiceImpl(
     private val checkResultRepository: CheckResultRepository,
     private val endpointRepository: EndpointRepository
 ) : StatsService {
 
+    /**
+     * Возвращает статистику по эндпоинту за окно.
+     */
     override fun getStats(endpointId: UUID, windowSec: Long, minSamples: Int?): StatsResponse {
         val now = Instant.now()
         val from = now.minusSeconds(windowSec)
@@ -29,10 +35,16 @@ open class StatsServiceImpl(
         )
     }
 
+    /**
+     * Возвращает проверки эндпоинта за период.
+     */
     override fun getChecks(endpointId: UUID, from: Instant, to: Instant) = MAPPER.toResponses(
         checkResultRepository.findByEndpointIdAndWindow(endpointId, from, to)
     )
 
+    /**
+     * Возвращает краткое резюме по всем эндпоинтам.
+     */
     override fun getSummery(windowSec: Long): List<EndpointSummaryResponse> {
         val now = Instant.now()
         val from = now.minusSeconds(windowSec)
@@ -58,6 +70,9 @@ open class StatsServiceImpl(
         }
     }
 
+    /**
+     * Собирает агрегированную статистику по списку латентностей.
+     */
     private fun calculateStats(
         latencies: List<Int>,
         errorCount: Int,
@@ -88,6 +103,9 @@ open class StatsServiceImpl(
     }
 }
 
+/**
+ * Возвращает значение заданного перцентиля для отсортированного списка.
+ */
 private fun percentile(sorted: List<Int>, percentile: Double): Double {
     if (sorted.isEmpty()) {
         return 0.0

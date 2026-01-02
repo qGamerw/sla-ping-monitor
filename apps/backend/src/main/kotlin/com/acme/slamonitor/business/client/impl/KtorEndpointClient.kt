@@ -12,11 +12,17 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
+/**
+ * Реализация клиента на базе Ktor HttpClient.
+ */
 open class KtorEndpointClient(
     private val http: HttpClient,
     private val httpDispatcher: CoroutineDispatcher,
 ) : EndpointClient {
 
+    /**
+     * Выполняет HTTP-запрос в заданном dispatcher.
+     */
     override suspend fun call(req: RuntimeRequest): HttpResponse {
         return withContext(httpDispatcher) {
             http.request(req.url) {

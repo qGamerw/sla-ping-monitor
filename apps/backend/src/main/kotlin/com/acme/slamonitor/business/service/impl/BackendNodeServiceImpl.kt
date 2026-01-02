@@ -6,10 +6,16 @@ import com.acme.slamonitor.persistence.BackendNodeRepository
 import com.acme.slamonitor.persistence.domain.BackendNodeEntity
 import java.time.Instant
 
+/**
+ * Реализация сервиса backend-нод на основе репозитория.
+ */
 open class BackendNodeServiceImpl(
     private val backendNodeRepository: BackendNodeRepository
 ) : BackendNodeService {
 
+    /**
+     * Создает или обновляет запись ноды по heartbeat.
+     */
     override fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity {
         val now = Instant.now()
         val existing = backendNodeRepository.findById(request.nodeId).orElse(null)
@@ -27,5 +33,8 @@ open class BackendNodeServiceImpl(
         return backendNodeRepository.save(entity)
     }
 
+    /**
+     * Возвращает все зарегистрированные ноды.
+     */
     override fun getNodes(): List<BackendNodeEntity> = backendNodeRepository.findAll()
 }

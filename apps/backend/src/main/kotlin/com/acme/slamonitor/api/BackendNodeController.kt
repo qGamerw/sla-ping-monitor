@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+/**
+ * REST-контроллер для регистрации и мониторинга backend-нод.
+ */
 @RestController
 @RequestMapping("/api/nodes")
 class BackendNodeController(

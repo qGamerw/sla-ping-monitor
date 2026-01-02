@@ -252,6 +252,9 @@ val dispatchersBeans = beans {
     bean<AppScope>(destroyMethodName = "close") { AppScope() }
 }
 
+/**
+ * Создает виртуальный executor с указанным префиксом потоков.
+ */
 private fun virtualPerTaskExecutor(prefix: String): ExecutorService {
     val factory: ThreadFactory = Thread.ofVirtual()
         .name(prefix, 1)

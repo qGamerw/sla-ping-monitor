@@ -2,6 +2,9 @@ package com.acme.slamonitor.utils
 
 import java.time.Duration
 
+/**
+ * Конфигурация очередей и периодов для планировщика проверок.
+ */
 data class SchedulerConfig(
     val workQueueCapacity: Int = 512,
     val outboxCapacity: Int = 1024,

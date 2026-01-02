@@ -3,6 +3,9 @@ package com.acme.slamonitor.business.scheduler.dto
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * Результат проверки с ошибкой.
+ */
 data class EndpointBad(
     override val id: UUID,
     override val versionSnapshot: Long,

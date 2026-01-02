@@ -10,6 +10,9 @@ import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * JPA-сущность результата проверки эндпоинта.
+ */
 @Entity
 @Table(name = "check_results")
 class CheckResultEntity(

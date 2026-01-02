@@ -3,6 +3,9 @@ package com.acme.slamonitor.business.client.dto
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 
+/**
+ * Параметры HTTP-запроса для выполнения проверки.
+ */
 data class RuntimeRequest(
     val url: String,
     val method: HttpMethod,

@@ -7,7 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
+/**
+ * Репозиторий для результатов проверок.
+ */
 interface CheckResultRepository : JpaRepository<CheckResultEntity, UUID> {
+    /**
+     * Возвращает проверки эндпоинта за период.
+     */
     @Query(
         """
         select cr
@@ -31,11 +37,17 @@ interface CheckResultRepository : JpaRepository<CheckResultEntity, UUID> {
         order by cr.startedAt asc
         """
     )
+    /**
+     * Возвращает проверки за период по всем эндпоинтам.
+     */
     fun findByWindow(
         @Param("from") from: Instant,
         @Param("to") to: Instant
     ): List<CheckResultEntity>
 
+    /**
+     * Возвращает последний результат проверки эндпоинта.
+     */
     fun findTopByEndpoint_IdOrderByFinishedAtDesc(id: UUID): CheckResultEntity?
 
 }

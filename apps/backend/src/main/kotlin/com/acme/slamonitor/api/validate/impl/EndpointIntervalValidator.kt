@@ -4,8 +4,14 @@ import com.acme.slamonitor.api.dto.ValidationError
 import com.acme.slamonitor.api.dto.request.EndpointRequest
 import com.acme.slamonitor.api.validate.Validator
 
+/**
+ * Проверяет минимальное значение интервала проверки.
+ */
 class EndpointIntervalValidator : Validator<EndpointRequest> {
 
+    /**
+     * Возвращает ошибку, если интервал меньше допустимого минимума.
+     */
     override fun validate(request: EndpointRequest): List<ValidationError> {
         val interval = request.intervalSec ?: return emptyList()
         if (interval < MIN_INTERVAL_SEC) {

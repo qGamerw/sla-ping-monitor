@@ -3,6 +3,9 @@ package com.acme.slamonitor.api.dto.response
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * DTO результата проверки эндпоинта.
+ */
 data class CheckResultResponse(
     val id: UUID,
     val endpointId: UUID,

@@ -8,10 +8,16 @@ import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 
+/**
+ * Аспект, логирующий начало, завершение и ошибки транзакционных вызовов.
+ */
 @Aspect
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 open class TransactionalLoggingAspect {
 
+    /**
+     * Оборачивает вызов метода с аннотацией TransactionalLogging.
+     */
     @Around("@annotation(ann)")
     fun around(pjp: ProceedingJoinPoint, ann: TransactionalLogging): Any? {
         val logMessage = pjp.args.firstOrNull { it is String } as? String ?: ""

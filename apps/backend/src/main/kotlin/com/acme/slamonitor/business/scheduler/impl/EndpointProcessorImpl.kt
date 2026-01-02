@@ -13,9 +13,15 @@ import io.ktor.http.HttpMethod
 import java.time.Instant
 import org.slf4j.LoggerFactory
 
+/**
+ * Выполняет проверку эндпоинта через HTTP-клиент.
+ */
 open class EndpointProcessorImpl(
     private val client: EndpointClient
 ) : EndpointProcessor {
+    /**
+     * Делает запрос и формирует результат проверки.
+     */
     override suspend fun check(endpoint: EndpointView): EndpointResult {
         val startNs = System.nanoTime()
 

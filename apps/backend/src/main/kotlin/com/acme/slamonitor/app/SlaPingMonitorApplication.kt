@@ -11,11 +11,17 @@ import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.runApplication
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
+/**
+ * Точка конфигурации Spring Boot приложения.
+ */
 @EnableJpaRepositories(basePackages = ["com.acme.slamonitor.persistence"])
 @EntityScan(basePackages = ["com.acme.slamonitor.persistence"])
 @SpringBootApplication
 class SlaPingMonitorApplication
 
+/**
+ * Точка входа приложения.
+ */
 fun main(args: Array<String>) {
     runApplication<SlaPingMonitorApplication>(*args) {
         addInitializers(
