@@ -1,8 +1,11 @@
 package com.acme.slamonitor.business.service.impl
 
+import com.acme.slamonitor.api.dto.response.EndpointSummaryResponse
 import com.acme.slamonitor.api.dto.response.StatsResponse
 import com.acme.slamonitor.business.service.StatsService
 import com.acme.slamonitor.persistence.CheckResultRepository
+import com.acme.slamonitor.persistence.EndpointRepository
+import com.acme.slamonitor.persistence.mapper.CheckResultMapper.Companion.MAPPER
 import java.time.Instant
 import java.util.UUID
 import kotlin.math.ceil
@@ -12,7 +15,8 @@ import org.springframework.stereotype.Service
 
 @Service
 class StatsServiceImpl(
-    private val checkResultRepository: CheckResultRepository
+    private val checkResultRepository: CheckResultRepository,
+    private val endpointRepository: EndpointRepository
 ) : StatsService {
 
     override fun getStats(endpointId: UUID, windowSec: Long, minSamples: Int?): StatsResponse {
@@ -27,7 +31,37 @@ class StatsServiceImpl(
         )
     }
 
-    override fun calculateStats(
+    override fun getChecks(endpointId: UUID, from: Instant, to: Instant) = MAPPER.toResponses(
+        checkResultRepository.findByEndpointIdAndWindow(endpointId, from, to)
+    )
+
+    override fun getSummery(windowSec: Long): List<EndpointSummaryResponse> {
+        val now = Instant.now()
+        val from = now.minusSeconds(windowSec)
+        val statsByEndpoint = checkResultRepository.findByWindow(from, now).groupBy { it.endpoint }
+
+        return endpointRepository.findAll().map { endpoint ->
+            val lastCheck = checkResultRepository.findTopByEndpoint_IdOrderByFinishedAtDesc(endpoint.id)
+            EndpointSummaryResponse(
+                id = endpoint.id,
+                name = endpoint.name,
+                url = endpoint.url,
+                enabled = endpoint.enabled,
+                lastCheckAt = lastCheck?.finishedAt,
+                lastStatusCode = lastCheck?.statusCode,
+                lastSuccess = lastCheck?.success,
+                windowStats = calculateStats(
+                    statsByEndpoint[endpoint]?.map { it.latencyMs } ?: emptyList(),
+                    statsByEndpoint[endpoint]?.count { !it.success } ?: -1,
+                    statsByEndpoint[endpoint]?.lastOrNull()?.statusCode ?: -1,
+                    20
+                )
+            )
+        }
+    }
+
+
+    private fun calculateStats(
         latencies: List<Int>,
         errorCount: Int,
         lastStatus: Int?,
@@ -35,14 +69,6 @@ class StatsServiceImpl(
     ): StatsResponse {
         if (latencies.isEmpty()) {
             return StatsResponse(
-                sampleCount = 0,
-                p50 = null,
-                p95 = null,
-                p99 = null,
-                avg = null,
-                min = null,
-                max = null,
-                errorRate = null,
                 lastStatus = lastStatus,
                 insufficientSamples = true
             )
@@ -60,25 +86,16 @@ class StatsServiceImpl(
         val insufficientSamples = sampleCount < minSamples
 
         return StatsResponse(
-            sampleCount = sampleCount,
-            p50 = p50,
-            p95 = p95,
-            p99 = p99,
-            avg = avg,
-            min = minValue,
-            max = maxValue,
-            errorRate = errorRate,
-            lastStatus = lastStatus,
-            insufficientSamples = insufficientSamples
+            sampleCount, p50, p95, p99, avg, minValue, maxValue, errorRate, lastStatus, insufficientSamples
         )
     }
+}
 
-    private fun percentile(sorted: List<Int>, percentile: Double): Double {
-        if (sorted.isEmpty()) {
-            return 0.0
-        }
-        val index = ceil(percentile * sorted.size).toInt() - 1
-        val bounded = max(0, min(index, sorted.size - 1))
-        return sorted[bounded].toDouble()
+private fun percentile(sorted: List<Int>, percentile: Double): Double {
+    if (sorted.isEmpty()) {
+        return 0.0
     }
+    val index = ceil(percentile * sorted.size).toInt() - 1
+    val bounded = max(0, min(index, sorted.size - 1))
+    return sorted[bounded].toDouble()
 }

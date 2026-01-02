@@ -1,14 +1,14 @@
 package com.acme.slamonitor.api.dto.response
 
 data class StatsResponse(
-    val sampleCount: Int,
-    val p50: Double?,
-    val p95: Double?,
-    val p99: Double?,
-    val avg: Double?,
-    val min: Int?,
-    val max: Int?,
-    val errorRate: Double?,
-    val lastStatus: Int?,
-    val insufficientSamples: Boolean
+    val sampleCount: Int = 0,
+    val p50: Double? = null,
+    val p95: Double? = null,
+    val p99: Double? = null,
+    val avg: Double? = null,
+    val min: Int? = null,
+    val max: Int? = null,
+    val errorRate: Double? = null,
+    val lastStatus: Int? = null,
+    val insufficientSamples: Boolean = false
 )

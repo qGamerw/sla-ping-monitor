@@ -62,7 +62,7 @@ DELETE {{baseUrl}}/api/endpoints/{{endpointId}}
 GET {{baseUrl}}/api/endpoints/{{endpointId}}/stats?windowSec=900
 
 ### Результаты проверок endpoint за интервал
-GET {{baseUrl}}/api/endpoints/{{endpointId}}/checks?from=2024-01-01T00:00:00Z&to=2024-01-01T01:00:00Z
+GET {{baseUrl}}/api/endpoints/{{endpointId}}/checks?from=2025-01-01T00:00:00Z&to=2027-01-01T01:00:00Z
 
 ### Сводка по endpoints
 GET {{baseUrl}}/api/endpoints/summary?windowSec=900

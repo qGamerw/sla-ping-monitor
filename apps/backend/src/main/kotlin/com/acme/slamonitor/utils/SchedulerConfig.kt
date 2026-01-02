@@ -7,7 +7,7 @@ data class SchedulerConfig(
     val outboxCapacity: Int = 1024,
     val workers: Int = 8,
 
-    val refreshPeriod: Duration = Duration.ofSeconds(60),
+    val refreshPeriod: Duration = Duration.ofSeconds(30),
     val flushPeriod: Duration = Duration.ofMillis(250),
     val flushBatchSize: Int = 200,
 

@@ -27,8 +27,8 @@ class StatsController(
         @PathVariable id: UUID,
         @RequestParam from: Instant,
         @RequestParam to: Instant
-    ) = BaseResponse("TODO")
+    ) = BaseResponse(statsService.getChecks(id, from, to))
 
     @GetMapping("/summary")
-    fun summary(@RequestParam windowSec: Long) = BaseResponse("TODO")
+    fun summary(@RequestParam windowSec: Long) = BaseResponse(statsService.getSummery(windowSec))
 }
