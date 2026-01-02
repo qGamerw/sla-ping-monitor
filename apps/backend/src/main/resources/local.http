@@ -10,7 +10,7 @@ Content-Type: application/json
 
 {
   "name": "Homepage",
-  "url": "http://localhost:4430/status/227",
+  "url": "http://localhost:4430/status/200",
   "method": "GET",
   "headers": {
     "accept": "text/plain"
@@ -20,7 +20,7 @@ Content-Type: application/json
     200,
     399
   ],
-  "intervalSec": 60,
+  "intervalSec": 5,
   "enabled": true,
   "tags": [
     "public",
@@ -66,75 +66,6 @@ GET {{baseUrl}}/api/endpoints/{{endpointId}}/checks?from=2024-01-01T00:00:00Z&to
 
 ### Сводка по endpoints
 GET {{baseUrl}}/api/endpoints/summary?windowSec=900
-
-### Создать правило алерта
-POST {{baseUrl}}/api/alert-rules
-Content-Type: application/json
-
-{
-  "endpointId": "{{endpointId}}",
-  "type": "P95_LATENCY",
-  "threshold": 1000,
-  "windowSec": 900,
-  "triggerForSec": 60,
-  "cooldownSec": 300,
-  "hysteresisRatio": 0.8,
-  "enabled": true
-}
-
-### Список правил алертов
-GET {{baseUrl}}/api/alert-rules?endpointId={{endpointId}}
-
-### Обновить правило алерта
-PUT {{baseUrl}}/api/alert-rules/{{alertRuleId}}
-Content-Type: application/json
-
-{
-  "endpointId": "{{endpointId}}",
-  "type": "P99_LATENCY",
-  "threshold": 1500,
-  "windowSec": 900,
-  "triggerForSec": 120,
-  "cooldownSec": 600,
-  "hysteresisRatio": 0.85,
-  "enabled": true
-}
-
-### Удалить правило алерта
-DELETE {{baseUrl}}/api/alert-rules/{{alertRuleId}}
-
-### Создать событие алерта
-POST {{baseUrl}}/api/alert-events
-Content-Type: application/json
-
-{
-  "ruleId": "{{alertRuleId}}",
-  "endpointId": "{{endpointId}}",
-  "state": "OPEN",
-  "openedAt": "2024-01-01T00:00:00Z",
-  "details": {
-    "reason": "p95 latency exceeded"
-  }
-}
-
-### Обновить событие алерта
-PUT {{baseUrl}}/api/alert-events/{{alertEventId}}
-Content-Type: application/json
-
-{
-  "ruleId": "{{alertRuleId}}",
-  "endpointId": "{{endpointId}}",
-  "state": "RESOLVED",
-  "openedAt": "2024-01-01T00:00:00Z",
-  "resolvedAt": "2024-01-01T00:10:00Z",
-  "lastNotifiedAt": "2024-01-01T00:05:00Z",
-  "details": {
-    "reason": "recovered"
-  }
-}
-
-### Список событий алертов
-GET {{baseUrl}}/api/alert-events?state=OPEN
 
 ### Heartbeat backend-ноды
 POST {{baseUrl}}/api/nodes/heartbeat

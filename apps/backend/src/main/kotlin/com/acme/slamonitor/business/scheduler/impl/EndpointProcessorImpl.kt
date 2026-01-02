@@ -29,11 +29,12 @@ class EndpointProcessorImpl(
                 EndpointTimeouts(
                     endpoint.timeoutMs.toLong(),
                     endpoint.timeoutMs.toLong(),
-                    endpoint.timeoutMs.toLong()),
+                    endpoint.timeoutMs.toLong()
+                ),
             )
 
             client.call(request).let {
-                if (endpoint.expectedStatus.contains(it.status.value)){
+                if (endpoint.expectedStatus.contains(it.status.value)) {
                     EndpointOk(
                         endpoint.id,
                         endpoint.dbVersion,

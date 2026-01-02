@@ -6,9 +6,10 @@ import com.acme.slamonitor.business.scheduler.dto.EndpointRef
 import com.acme.slamonitor.business.scheduler.dto.EndpointResult
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
 import com.acme.slamonitor.business.scheduler.dto.LocalState
-import com.acme.slamonitor.utils.SchedulerConfig
 import com.acme.slamonitor.persistence.EndpointRepository
+import com.acme.slamonitor.persistence.domain.EndpointEntity
 import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
+import com.acme.slamonitor.utils.SchedulerConfig
 import java.sql.PreparedStatement
 import java.sql.Timestamp
 import java.sql.Types
@@ -37,22 +38,18 @@ import org.springframework.stereotype.Service
 @Service
 class InMemoryScheduler(
     private val repository: EndpointRepository,
-    private val jdbc: JdbcTemplate,
+    private val jdbcTemplate: JdbcTemplate,
     private val processor: EndpointProcessor,
-    private val clock: Clock = Clock.systemUTC(),
-    private val config: SchedulerConfig = SchedulerConfig(),
     private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher
 ) {
-
-    private val registry = ConcurrentHashMap<UUID, EndpointView>()
-
     private val heapMutex = Mutex()
-    private val readyHeap = PriorityQueue<EndpointRef>(compareBy<EndpointRef> { it.nextRunAt }.thenBy { it.id })
-
-    private val workQueue = Channel<UUID>(capacity = config.workQueueCapacity)
-    private val outbox = Channel<EndpointResult>(capacity = config.outboxCapacity)
 
     private val nudge = Channel<Unit>(Channel.CONFLATED)
+    private val outbox = Channel<EndpointResult>(capacity = CONFIG.outboxCapacity)
+    private val workQueue = Channel<UUID>(capacity = CONFIG.workQueueCapacity)
+
+    private val registry = ConcurrentHashMap<UUID, EndpointView>()
+    private val readyHeap = PriorityQueue(compareBy<EndpointRef> { it.nextRunAt }.thenBy { it.id })
 
     suspend fun runLoops(
         refreshLoopDispatcher: CoroutineDispatcher,
@@ -62,167 +59,121 @@ class InMemoryScheduler(
     ) = coroutineScope {
         launch(refreshLoopDispatcher) { refreshLoop() }
         launch(feedLoopDispatcher) { feedLoop() }
-        repeat(config.workers) { launch(workerDispatcher) { workerLoop() } }
+        repeat(CONFIG.workers) { launch(workerDispatcher) { workerLoop() } }
         launch(flusherLoopDispatcher) { flusherLoop() }
     }
 
-    /**
-     * Refresh-loop:
-     * 1) meta scan (id/version/enabled/interval/updatedAt)
-     * 2) changedIds -> load full entities
-     * 3) upsert registry + push EndpointRef в heap (nextRunAt)
-     * 4) cleanup: удалили из БД -> выбросить из registry (heap очистится лениво)
-     */
     private suspend fun refreshLoop() {
         while (currentCoroutineContext().isActive) {
-            val now = Instant.now(clock)
-
+            val now = Instant.now(CLOCK)
             val seen = HashSet<UUID>(4096)
-            val changed = ArrayList<UUID>(1024)
-
+            val changedEndpoints = ArrayList<UUID>(1024)
             var page = 0
+
             while (true) {
-                val metas = jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting all endpoints") {
-                    repository.findAllMeta(PageRequest.of(page, config.metaPageSize))
+                val endpointMetas = jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting all endpoints") {
+                    repository.findAllMeta(PageRequest.of(page, CONFIG.metaPageSize))
                 }
-                if (metas.isEmpty()) break
+                if (endpointMetas.isEmpty()) break
 
-                for (m in metas) {
-                    val id = m.getId()
-                    seen += id
+                for (meta in endpointMetas) {
+                    seen += meta.getId()
 
-                    val local = registry[id]
-                    val isChanged =
-                        local == null ||
-                                local.dbVersion != m.getVersion() ||
-                                local.enabled != m.getEnabled() ||
-                                local.intervalSec != m.getIntervalSec()
+                    val isChanged = registry[meta.getId()].let {
+                        it == null ||
+                                it.dbVersion != meta.getVersion() ||
+                                it.enabled != meta.getEnabled() ||
+                                it.intervalSec != meta.getIntervalSec()
+                    }
 
-                    if (isChanged) changed += id
+                    if (isChanged) changedEndpoints += meta.getId()
                 }
                 page++
             }
 
-            if (changed.isNotEmpty()) {
-                for (chunk in changed.chunked(500)) {
-                    val entities = jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting endpoint: $chunk") {
-                        repository.findAllById(chunk)
+            if (changedEndpoints.isNotEmpty()) {
+                val entities =
+                    jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting endpoint: $changedEndpoints") {
+                        repository.findAllById(changedEndpoints)
                     }
 
-                    for (e in entities) {
-                        if (!e.enabled) {
-                            registry.remove(e.id)
-                            continue
-                        }
+                for (changeEntity in entities) {
+                    if (!changeEntity.enabled) {
+                        registry.remove(changeEntity.id)
+                        LOG.info("$changeEntity has been removed from queue worker")
+                        continue
+                    }
 
-                        registry.compute(e.id) { _, old ->
-                            val preservedState = old?.localState
-                                ?.takeIf { it == LocalState.RUNNING || it == LocalState.IN_FLIGHT }
-                                ?: LocalState.READY_LOCAL
+                    registry.compute(changeEntity.id) { _, existEntity ->
+                        val preservedState = existEntity?.localState
+                            ?.takeIf { it == LocalState.RUNNING || it == LocalState.IN_FLIGHT }
+                            ?: LocalState.READY_LOCAL
 
-                            val nextRunAt = when {
-                                old == null -> now                       // новый endpoint — запускаем сразу
-                                old.dbVersion != e.version -> now        // изменили конфиг — тоже запускаем сразу
-                                else -> old.nextRunAt                    // без изменений — сохраняем расписание
-                            }
-
-                            val failCount = when {
-                                old == null -> 0
-                                old.dbVersion != e.version -> 0          // при смене конфига сбрасываем
-                                else -> old.failCount
-                            }
-
-                            EndpointView(
-                                id = e.id,
-                                dbVersion = e.version,
-
-                                name = e.name,
-                                url = e.url,
-                                method = e.method,
-                                headers = e.headers,
-                                timeoutMs = e.timeoutMs,
-                                expectedStatus = e.expectedStatus,
-                                intervalSec = e.intervalSec,
-                                enabled = e.enabled,
-
-                                nextRunAt = nextRunAt,
-                                failCount = failCount,
-                                localState = preservedState
-                            )
-                        }?.also { view ->
-                            if (view.localState == LocalState.READY_LOCAL) {
-                                heapAdd(EndpointRef(view.id, view.nextRunAt, view.dbVersion))
-                            }
+                        EndpointView(
+                            changeEntity,
+                            existEntity.getNextRunAt(now, changeEntity),
+                            existEntity.getFailCount(changeEntity),
+                            preservedState
+                        )
+                    }?.also { view ->
+                        if (view.localState == LocalState.READY_LOCAL) {
+                            heapAdd(EndpointRef(view.id, view.nextRunAt, view.dbVersion))
                         }
                     }
                 }
 
+                LOG.info("Refresh loop: Send signal to updated endpoints")
                 nudge.trySend(Unit)
             }
 
-            // cleanup удалённых из БД
+            LOG.info("Synchronization for deleting endpoints in in-memory")
             registry.keys.removeIf { id -> !seen.contains(id) }
 
-            LOG.info("registry size=${registry.size}, heap maybe grows (lazy), workQueue cap=${config.workQueueCapacity}")
-
-            delay(config.refreshPeriod.toMillis())
+            LOG.info("registry size=${registry.size}, heap maybe grows (lazy), workQueue cap=${CONFIG.workQueueCapacity}")
+            delay(CONFIG.refreshPeriod.toMillis())
         }
     }
 
-    /**
-     * Feed-loop:
-     * достаёт due из heap и кладёт в workQueue.
-     * lazy deletion: ref.versionSnapshot должен совпасть с registry.dbVersion.
-     */
     private suspend fun feedLoop() {
         while (currentCoroutineContext().isActive) {
-            val now = Instant.now(clock)
+            val now = Instant.now(CLOCK)
+            val endpointRef = heapPollIfDue(now)
 
-            val ref = heapPollIfDue(now)
-            if (ref == null) {
+            if (endpointRef == null) {
                 val nextAt = heapPeekNextRunAt()
-                val sleepMs = nextAt
-                    ?.let { Duration.between(now, it).toMillis().coerceAtLeast(1) }
-                    ?: 50L
+                val sleepMs = nextAt?.let { Duration.between(now, it).toMillis().coerceAtLeast(1) } ?: 60000L
 
                 withTimeoutOrNull(sleepMs) { nudge.receive() }
                 continue
             }
 
-            val pushed = markInFlightIfActual(ref, now)
+            val pushed = markInFlightIfActual(endpointRef, now)
             if (!pushed) continue
 
-            val send = workQueue.trySend(ref.id)
+            val send = workQueue.trySend(endpointRef.id)
             if (!send.isSuccess) {
-                registry.computeIfPresent(ref.id) { _, v ->
+                registry.computeIfPresent(endpointRef.id) { _, v ->
                     if (v.localState == LocalState.IN_FLIGHT) v.copy(localState = LocalState.READY_LOCAL) else v
                 }
-                heapAdd(ref)
+                heapAdd(endpointRef)
                 delay(10)
             }
         }
     }
 
-    /**
-     * Worker:
-     * - берёт endpoint из registry
-     * - выполняет check()
-     * - планирует следующий nextRunAt (успех: intervalSec; ошибка: backoff + interval cap)
-     * - пишет результат в outbox
-     */
     private suspend fun workerLoop() {
         while (currentCoroutineContext().isActive) {
             val id = workQueue.receive()
             registry[id] ?: continue
 
-            val running = registry.computeIfPresent(id) { _, v ->
-                when (v.localState) {
-                    LocalState.IN_FLIGHT, LocalState.READY_LOCAL -> v.copy(localState = LocalState.RUNNING)
-                    LocalState.RUNNING -> v
+            val running = registry.computeIfPresent(id) { _, view ->
+                when (view.localState) {
+                    LocalState.IN_FLIGHT, LocalState.READY_LOCAL -> view.copy(localState = LocalState.RUNNING)
+                    LocalState.RUNNING -> view
                 }
             } ?: continue
 
-            val now = Instant.now(clock)
+            val now = Instant.now(CLOCK)
 
             try {
                 val result = processor.check(running)
@@ -230,9 +181,8 @@ class InMemoryScheduler(
 
                 val nextAt = now.plusSeconds(running.intervalSec.toLong())
 
-                // планируем следующий запуск, сбрасываем failCount
-                registry.computeIfPresent(id) { _, v ->
-                    v.copy(
+                registry.computeIfPresent(id) { _, view ->
+                    view.copy(
                         nextRunAt = nextAt,
                         failCount = 0,
                         localState = LocalState.READY_LOCAL
@@ -242,10 +192,7 @@ class InMemoryScheduler(
                     nudge.trySend(Unit)
                 }
             } catch (ex: Throwable) {
-                val err = ex.message ?: ex::class.simpleName ?: "error"
                 val failCount = running.failCount + 1
-
-                // backoff: 2^failCount секунд, но не больше intervalSec (чтобы не “зависать” навечно)
                 val backoffSec = (1L shl failCount).coerceAtMost(60L)
                 val delaySec = minOf(backoffSec, running.intervalSec.toLong().coerceAtLeast(1))
                 val nextAt = now.plusSeconds(delaySec)
@@ -255,12 +202,12 @@ class InMemoryScheduler(
                         id = running.id,
                         versionSnapshot = running.dbVersion,
                         checkedAt = now,
-                        error = err
+                        error = ex.message ?: "error"
                     )
                 )
 
-                registry.computeIfPresent(id) { _, v ->
-                    v.copy(
+                registry.computeIfPresent(id) { _, view ->
+                    view.copy(
                         nextRunAt = nextAt,
                         failCount = failCount,
                         localState = LocalState.READY_LOCAL
@@ -273,28 +220,21 @@ class InMemoryScheduler(
         }
     }
 
-    /**
-     * Flusher-loop:
-     * пример — батч вставка результатов в endpoint_checks.
-     * Можно заменить на обновление другой таблицы/метрик/логов.
-     */
     private suspend fun flusherLoop() {
         while (currentCoroutineContext().isActive) {
-            val firstOrNull = withTimeoutOrNull(config.flushPeriod.toMillis()) {
-                outbox.receiveCatching().getOrNull() // не бросает при close
+            val firstOrNull = withTimeoutOrNull(CONFIG.flushPeriod.toMillis()) {
+                outbox.receiveCatching().getOrNull()
             }
 
             if (firstOrNull == null) {
-                // если канал закрыт и элементов больше не будет — выходим
                 if (outbox.isClosedForReceive) break
-                // иначе это просто таймаут
                 continue
             }
 
-            val batch = ArrayList<EndpointResult>(config.flushBatchSize)
+            val batch = ArrayList<EndpointResult>(CONFIG.flushBatchSize)
             batch += firstOrNull
 
-            while (batch.size < config.flushBatchSize) {
+            while (batch.size < CONFIG.flushBatchSize) {
                 val next = outbox.tryReceive().getOrNull() ?: break
                 batch += next
             }
@@ -303,32 +243,20 @@ class InMemoryScheduler(
         }
     }
 
-
     private suspend fun flushBatch(batch: List<EndpointResult>) {
-        val sql = """
-        insert into check_results(
-            id, endpoint_id, started_at, finished_at,
-            latency_ms, status_code, success, error_type, error_message
-        )
-        values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """.trimIndent()
-
-        jdbc.batchUpdate(sql, object : BatchPreparedStatementSetter {
+        jdbcTemplate.batchUpdate(SQL_QUEUE, object : BatchPreparedStatementSetter {
             override fun getBatchSize(): Int = batch.size
 
             override fun setValues(ps: PreparedStatement, i: Int) {
-                val r = batch[i]
+                val result = batch[i]
 
-                val finishedAt: Instant = r.checkedAt
+                val finishedAt: Instant = result.checkedAt
 
-                // latency: в entity Int (nullable нельзя), поэтому делаем best-effort
-                val latencyLong: Long = when (r) {
-                    is EndpointOk  -> r.latencyMs
-                    is EndpointBad -> r.latencyMs ?: 0L
-                    else -> error("Unknown result type: ${r::class}")
+                val latencyLong: Long = when (result) {
+                    is EndpointOk -> result.latencyMs
+                    is EndpointBad -> result.latencyMs ?: 0L
                 }
 
-                // защитимся от переполнения Int (если вдруг latencyLong огромный)
                 val latencyInt: Int = when {
                     latencyLong <= 0L -> 0
                     latencyLong >= Int.MAX_VALUE.toLong() -> Int.MAX_VALUE
@@ -338,36 +266,31 @@ class InMemoryScheduler(
                 val startedAt: Instant = finishedAt.minusMillis(latencyLong.coerceAtLeast(0L))
 
                 ps.setObject(1, UUID.randomUUID())
-                ps.setObject(2, r.id) // UUID для Postgres ок
+                ps.setObject(2, result.id)
                 ps.setTimestamp(3, Timestamp.from(startedAt))
                 ps.setTimestamp(4, Timestamp.from(finishedAt))
                 ps.setInt(5, latencyInt)
 
-                when (r) {
+                when (result) {
                     is EndpointOk -> {
-                        ps.setInt(6, r.httpStatus)
+                        ps.setInt(6, result.httpStatus)
                         ps.setBoolean(7, true)
-                        ps.setNull(8, Types.VARCHAR) // error_type
-                        ps.setNull(9, Types.VARCHAR) // error_message
+                        ps.setNull(8, Types.VARCHAR)
+                        ps.setNull(9, Types.VARCHAR)
                     }
 
                     is EndpointBad -> {
-                        if (r.httpStatus != null) ps.setInt(6, r.httpStatus) else ps.setNull(6, Types.INTEGER)
+                        if (result.httpStatus != null) ps.setInt(6, result.httpStatus) else ps.setNull(6, Types.INTEGER)
                         ps.setBoolean(7, false)
 
-                        // простая классификация: HTTP-ошибка vs "что-то сломалось до ответа"
-                        val errorType = if (r.httpStatus != null) "HTTP" else "EXCEPTION"
+                        val errorType = if (result.httpStatus != null) "HTTP" else "EXCEPTION"
                         ps.setString(8, errorType)
-                        ps.setString(9, r.error)
+                        ps.setString(9, result.error)
                     }
-
-                    else -> error("Unknown result type: ${r::class}")
                 }
             }
         })
     }
-
-    // ===== Heap helpers =====
 
     private suspend fun heapAdd(ref: EndpointRef) {
         heapMutex.withLock { readyHeap.add(ref) }
@@ -379,21 +302,17 @@ class InMemoryScheduler(
             if (top.nextRunAt <= now) readyHeap.poll() else null
         }
 
-    private suspend fun heapPeekNextRunAt(): Instant? =
-        heapMutex.withLock { readyHeap.peek()?.nextRunAt }
+    private suspend fun heapPeekNextRunAt(): Instant? = heapMutex.withLock { readyHeap.peek()?.nextRunAt }
 
-    /**
-     * lazy deletion + READY_LOCAL -> IN_FLIGHT
-     */
     private fun markInFlightIfActual(ref: EndpointRef, now: Instant): Boolean {
-        val updated = registry.computeIfPresent(ref.id) { _, v ->
+        val updated = registry.computeIfPresent(ref.id) { _, view ->
             val ok =
-                v.enabled &&
-                        v.dbVersion == ref.versionSnapshot &&
-                        v.nextRunAt <= now &&
-                        v.localState == LocalState.READY_LOCAL
+                view.enabled &&
+                        view.dbVersion == ref.versionSnapshot &&
+                        view.nextRunAt <= now &&
+                        view.localState == LocalState.READY_LOCAL
 
-            if (ok) v.copy(localState = LocalState.IN_FLIGHT) else v
+            if (ok) view.copy(localState = LocalState.IN_FLIGHT) else view
         } ?: return false
 
         return updated.localState == LocalState.IN_FLIGHT &&
@@ -402,4 +321,31 @@ class InMemoryScheduler(
     }
 }
 
+private fun EndpointView?.getFailCount(
+    changeEntity: EndpointEntity
+): Int = when {
+    this == null -> 0
+    this.dbVersion != changeEntity.version -> 0
+    else -> this.failCount
+}
+
+private fun EndpointView?.getNextRunAt(
+    now: Instant,
+    changeEntity: EndpointEntity
+): Instant = when {
+    this == null -> now
+    this.dbVersion != changeEntity.version -> this.nextRunAt
+    else -> this.nextRunAt
+}
+
 private val LOG by lazy { LoggerFactory.getLogger(InMemoryScheduler::class.java) }
+private val CLOCK = Clock.systemUTC()
+private val CONFIG = SchedulerConfig()
+
+val SQL_QUEUE = """
+        insert into check_results(
+            id, endpoint_id, started_at, finished_at,
+            latency_ms, status_code, success, error_type, error_message
+        )
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """.trimIndent()
