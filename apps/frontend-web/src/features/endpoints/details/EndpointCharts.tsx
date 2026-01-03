@@ -10,6 +10,11 @@ export default function EndpointCharts({
   latencyPoints,
   errorPoints,
 }: EndpointChartsProps) {
+  const formatLatency = (value: number | null) =>
+    value === null ? "—" : `${value.toFixed(0)} ms`;
+  const formatErrors = (value: number | null) =>
+    value === null ? "—" : `${value.toFixed(0)} errors`;
+
   return (
     <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
       <Card sx={{ flex: 1 }}>
@@ -24,6 +29,7 @@ export default function EndpointCharts({
                   data: latencyPoints.map((point) => point.value),
                   label: "Latency",
                   color: "#1976d2",
+                  valueFormatter: formatLatency,
                 },
               ]}
               xAxis={[
@@ -32,6 +38,7 @@ export default function EndpointCharts({
                   scaleType: "band",
                 },
               ]}
+              tooltip={{ trigger: "axis" }}
             />
           </Stack>
         </CardContent>
@@ -48,6 +55,7 @@ export default function EndpointCharts({
                   data: errorPoints.map((point) => point.value),
                   label: "Errors",
                   color: "#ef5350",
+                  valueFormatter: formatErrors,
                 },
               ]}
               xAxis={[
@@ -56,6 +64,7 @@ export default function EndpointCharts({
                   scaleType: "band",
                 },
               ]}
+              tooltip={{ trigger: "axis" }}
             />
           </Stack>
         </CardContent>
