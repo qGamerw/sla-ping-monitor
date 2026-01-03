@@ -103,21 +103,49 @@ export default function HomePage() {
     setError(null);
     try {
       const windowSec = windowToSeconds(window);
-      const [endpointList, summaryList] = await Promise.all([
+      const [endpointsResult, summaryResult] = await Promise.allSettled([
         fetchEndpoints(),
         fetchEndpointSummary(windowSec),
       ]);
+
+      const summaryList =
+        summaryResult.status === "fulfilled" ? summaryResult.value : [];
       const summaryMap = new Map(
         summaryList.map((summary) => [summary.id, summary]),
       );
-      setEndpoints(
-        endpointList.map((endpoint) => ({
-          ...endpoint,
-          summary: summaryMap.get(endpoint.id),
-        })),
-      );
-    } catch (err) {
-      setError("Не удалось загрузить данные. Проверьте соединение с API.");
+
+      if (endpointsResult.status === "fulfilled") {
+        setEndpoints(
+          endpointsResult.value.map((endpoint) => ({
+            ...endpoint,
+            summary: summaryMap.get(endpoint.id),
+          })),
+        );
+        if (summaryResult.status === "rejected") {
+          setError("Не удалось загрузить сводные метрики.");
+        }
+      } else if (summaryList.length > 0) {
+        setEndpoints(
+          summaryList.map((summary) => ({
+            id: summary.id,
+            name: summary.name,
+            url: summary.url,
+            method: "GET",
+            headers: null,
+            timeoutMs: 0,
+            expectedStatus: [],
+            intervalSec: 0,
+            enabled: summary.enabled,
+            tags: null,
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+            summary,
+          })),
+        );
+        setError("Не удалось загрузить конфигурации endpoint, показаны сводки.");
+      } else {
+        setError("Не удалось загрузить данные. Проверьте соединение с API.");
+      }
     } finally {
       setLoading(false);
     }
@@ -133,6 +161,12 @@ export default function HomePage() {
   };
 
   const handleEdit = (endpoint: EndpointResponse) => {
+    if (endpoint.timeoutMs === 0 && endpoint.intervalSec === 0) {
+      setError(
+        "Недоступно редактирование без полной конфигурации endpoint. Обновите данные.",
+      );
+      return;
+    }
     setEditing(endpoint);
     setDialogOpen(true);
   };
@@ -162,6 +196,12 @@ export default function HomePage() {
 
   const handleToggle = async (endpoint: EndpointResponse) => {
     try {
+      if (endpoint.timeoutMs === 0 && endpoint.intervalSec === 0) {
+        setError(
+          "Недостаточно данных для обновления endpoint. Откройте его карточку.",
+        );
+        return;
+      }
       await updateEndpoint(endpoint.id, {
         ...buildRequest(endpoint),
         enabled: !endpoint.enabled,

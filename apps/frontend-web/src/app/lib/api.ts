@@ -16,6 +16,9 @@ export const fetchEndpoints = async () => {
   const { data } = await api.get<BaseResponse<EndpointResponse[]>>(
     "/api/endpoints",
   );
+  if (!data.susses) {
+    throw new Error("Failed to load endpoints");
+  }
   return data.body ?? [];
 };
 
@@ -23,6 +26,9 @@ export const fetchEndpoint = async (id: string) => {
   const { data } = await api.get<BaseResponse<EndpointResponse>>(
     `/api/endpoints/${id}`,
   );
+  if (!data.susses) {
+    throw new Error("Failed to load endpoint");
+  }
   return data.body;
 };
 
@@ -43,6 +49,9 @@ export const fetchEndpointSummary = async (windowSec: number) => {
     "/api/endpoints/summary",
     { params: { windowSec } },
   );
+  if (!data.susses) {
+    throw new Error("Failed to load endpoint summary");
+  }
   return data.body ?? [];
 };
 
@@ -51,6 +60,9 @@ export const fetchEndpointStats = async (id: string, windowSec: number) => {
     `/api/endpoints/${id}/stats`,
     { params: { windowSec } },
   );
+  if (!data.susses) {
+    throw new Error("Failed to load endpoint stats");
+  }
   return data.body;
 };
 
@@ -63,5 +75,8 @@ export const fetchEndpointChecks = async (
     `/api/endpoints/${id}/checks`,
     { params: { from, to } },
   );
+  if (!data.susses) {
+    throw new Error("Failed to load endpoint checks");
+  }
   return data.body ?? [];
 };
