@@ -237,9 +237,11 @@ export default function HomePageClient() {
       return;
     }
     try {
+      const baseName = draft.name?.trim() || `Endpoint ${dayjs().format("HHmmss")}`;
       const requests = Array.from({ length: bulkCount }, (_, index) => ({
         ...draft,
-        name: bulkCount > 1 ? `${draft.name} #${index + 1}` : draft.name,
+        name:
+          bulkCount > 1 ? `${baseName} #${index + 1}` : baseName,
       }));
       for (const request of requests) {
         await createEndpoint(request);
@@ -558,6 +560,7 @@ export default function HomePageClient() {
         open={bulkDialogOpen}
         availableTags={availableTags}
         initial={null}
+        hideNameField
         count={bulkCount}
         onCountChange={setBulkCount}
         onClose={() => setBulkDialogOpen(false)}

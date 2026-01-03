@@ -26,6 +26,7 @@ interface EndpointFormDialogProps {
   open: boolean;
   availableTags: string[];
   initial?: EndpointResponse | null;
+  hideNameField?: boolean;
   count?: number;
   onCountChange?: (value: number) => void;
   onClose: () => void;
@@ -52,6 +53,7 @@ export default function EndpointFormDialog({
   initial,
   onClose,
   onSave,
+  hideNameField = false,
   count,
   onCountChange,
 }: EndpointFormDialogProps) {
@@ -136,12 +138,14 @@ export default function EndpointFormDialog({
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField
-            label="Название"
-            value={draft.name}
-            onChange={handleChange("name")}
-            fullWidth
-          />
+          {!hideNameField && (
+            <TextField
+              label="Название"
+              value={draft.name}
+              onChange={handleChange("name")}
+              fullWidth
+            />
+          )}
           <TextField
             label="URL"
             value={draft.url}
