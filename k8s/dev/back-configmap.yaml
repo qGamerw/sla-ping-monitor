@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: back-config
+  namespace: app
+data:
+  BACK_EXTERNAL_BASE_URL: http://host.docker.internal:8080

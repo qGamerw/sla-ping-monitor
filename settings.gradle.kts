@@ -1,2 +1,2 @@
 rootProject.name = "sla-ping-monitor"
-include("apps:backend")
+include("back")
