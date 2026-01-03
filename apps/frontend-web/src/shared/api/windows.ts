@@ -1,4 +1,4 @@
-import type { MetricsWindow } from "./apiTypes";
+import type { MetricsWindow } from "./types";
 
 export const windowOptions: MetricsWindow[] = [
   "5m",

@@ -17,7 +17,7 @@ import {
   Typography,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import type { EndpointRequest, EndpointResponse } from "../app/lib/apiTypes";
+import type { EndpointRequest, EndpointResponse } from "../../../shared/api/types";
 
 export type EndpointDraft = Omit<EndpointRequest, "headers" | "tags"> & {
   headers: Record<string, string>;

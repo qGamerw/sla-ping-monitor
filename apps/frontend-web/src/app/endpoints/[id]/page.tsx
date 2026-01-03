@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { CircularProgress, Stack } from "@mui/material";
-import EndpointDetailsClient from "./endpoint-details-client";
+import EndpointDetailsView from "../../../features/endpoints/details/EndpointDetailsView";
 
 function LoadingFallback() {
   return (
@@ -13,7 +13,7 @@ function LoadingFallback() {
 export default function Page() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <EndpointDetailsClient />
+      <EndpointDetailsView />
     </Suspense>
   );
 }
