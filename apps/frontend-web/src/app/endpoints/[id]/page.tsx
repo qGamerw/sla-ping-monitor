@@ -102,6 +102,7 @@ export default function EndpointDetailsPage() {
   const [endpoint, setEndpoint] = React.useState<EndpointResponse | null>(null);
   const [stats, setStats] = React.useState<StatsResponse | null>(null);
   const [checks, setChecks] = React.useState<CheckResultResponse[]>([]);
+  const [refreshSec, setRefreshSec] = React.useState<number | null>(null);
   const [range, setRange] = React.useState<{
     from: dayjs.Dayjs;
     to: dayjs.Dayjs;
@@ -141,6 +142,14 @@ export default function EndpointDetailsPage() {
     }
     void loadData();
   }, [loadData, searchParams, window]);
+
+  React.useEffect(() => {
+    if (!refreshSec) return;
+    const intervalId = window.setInterval(() => {
+      void loadData();
+    }, refreshSec * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [loadData, refreshSec]);
 
   const handleWindowChange = (value: MetricsWindow) => {
     setWindow(value);
@@ -248,6 +257,24 @@ export default function EndpointDetailsPage() {
                         {item}
                       </MenuItem>
                     ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                  <InputLabel id="refresh-select">Refresh</InputLabel>
+                  <Select
+                    labelId="refresh-select"
+                    label="Refresh"
+                    value={refreshSec ?? ""}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setRefreshSec(value === "" ? null : Number(value));
+                    }}
+                  >
+                    <MenuItem value="">Не обновлять</MenuItem>
+                    <MenuItem value={15}>15 секунд</MenuItem>
+                    <MenuItem value={30}>30 секунд</MenuItem>
+                    <MenuItem value={60}>1 минута</MenuItem>
+                    <MenuItem value={300}>5 минут</MenuItem>
                   </Select>
                 </FormControl>
               </Stack>

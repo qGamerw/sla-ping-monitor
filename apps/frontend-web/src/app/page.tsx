@@ -91,6 +91,7 @@ export default function HomePage() {
   const [query, setQuery] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [refreshSec, setRefreshSec] = React.useState<number | null>(null);
 
   const availableTags = React.useMemo(
     () =>
@@ -165,6 +166,14 @@ export default function HomePage() {
     }
     void loadData();
   }, [loadData, searchParams, window]);
+
+  React.useEffect(() => {
+    if (!refreshSec) return;
+    const intervalId = window.setInterval(() => {
+      void loadData();
+    }, refreshSec * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [loadData, refreshSec]);
 
   const handleWindowChange = (value: MetricsWindow) => {
     setWindow(value);
@@ -274,23 +283,43 @@ export default function HomePage() {
                     окна.
                   </Typography>
                 </Stack>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <InputLabel id="window-select">Окно</InputLabel>
-                  <Select
-                    labelId="window-select"
-                    label="Окно"
-                    value={window}
-                    onChange={(event) =>
-                      handleWindowChange(event.target.value as MetricsWindow)
-                    }
-                  >
-                    {windowOptions.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel id="window-select">Окно</InputLabel>
+                    <Select
+                      labelId="window-select"
+                      label="Окно"
+                      value={window}
+                      onChange={(event) =>
+                        handleWindowChange(event.target.value as MetricsWindow)
+                      }
+                    >
+                      {windowOptions.map((item) => (
+                        <MenuItem key={item} value={item}>
+                          {item}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <InputLabel id="refresh-select">Refresh</InputLabel>
+                    <Select
+                      labelId="refresh-select"
+                      label="Refresh"
+                      value={refreshSec ?? ""}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setRefreshSec(value === "" ? null : Number(value));
+                      }}
+                    >
+                      <MenuItem value="">Не обновлять</MenuItem>
+                      <MenuItem value={15}>15 секунд</MenuItem>
+                      <MenuItem value={30}>30 секунд</MenuItem>
+                      <MenuItem value={60}>1 минута</MenuItem>
+                      <MenuItem value={300}>5 минут</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Stack>
               </Stack>
             </CardContent>
           </Card>
