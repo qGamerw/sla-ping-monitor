@@ -53,12 +53,54 @@ const mapStatus = (stats?: StatsResponse): Status => {
 
 const formatChartTime = (value: string) => dayjs(value).format("HH:mm");
 
+const buildBuckets = (
+  checks: CheckResultResponse[],
+  from: dayjs.Dayjs,
+  to: dayjs.Dayjs,
+  bucketCount: number,
+) => {
+  const windowMs = to.diff(from, "millisecond");
+  const bucketMs = windowMs / bucketCount;
+  const buckets = Array.from({ length: bucketCount }, (_, index) => ({
+    start: from.add(bucketMs * index, "millisecond"),
+    latencies: [] as number[],
+    errors: 0,
+  }));
+
+  checks.forEach((check) => {
+    const timestamp = dayjs(check.startedAt);
+    if (timestamp.isBefore(from) || timestamp.isAfter(to)) return;
+    const position = Math.min(
+      Math.floor(timestamp.diff(from, "millisecond") / bucketMs),
+      bucketCount - 1,
+    );
+    buckets[position].latencies.push(check.latencyMs);
+    if (!check.success) {
+      buckets[position].errors += 1;
+    }
+  });
+
+  return buckets.map((bucket) => ({
+    time: formatChartTime(bucket.start.toISOString()),
+    latency:
+      bucket.latencies.length > 0
+        ? bucket.latencies.reduce((sum, value) => sum + value, 0) /
+          bucket.latencies.length
+        : null,
+    errors: bucket.errors,
+  }));
+};
+
 export default function EndpointDetailsPage() {
   const params = useParams<{ id: string }>();
   const [window, setWindow] = React.useState<MetricsWindow>("1h");
   const [endpoint, setEndpoint] = React.useState<EndpointResponse | null>(null);
   const [stats, setStats] = React.useState<StatsResponse | null>(null);
   const [checks, setChecks] = React.useState<CheckResultResponse[]>([]);
+  const [range, setRange] = React.useState<{
+    from: dayjs.Dayjs;
+    to: dayjs.Dayjs;
+  } | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -78,6 +120,7 @@ export default function EndpointDetailsPage() {
       setEndpoint(endpointData ?? null);
       setStats(statsData ?? null);
       setChecks(checksData);
+      setRange({ from, to });
     } catch (err) {
       setError("Не удалось загрузить данные по endpoint.");
     } finally {
@@ -100,14 +143,11 @@ export default function EndpointDetailsPage() {
     );
   }
 
-  const latencyPoints = checks.map((check) => ({
-    time: formatChartTime(check.startedAt),
-    value: check.latencyMs,
-  }));
-  const errorPoints = checks.map((check) => ({
-    time: formatChartTime(check.startedAt),
-    value: check.success ? 0 : 1,
-  }));
+  const bucketCount = 12;
+  const bucketedData =
+    range === null
+      ? []
+      : buildBuckets(checks, range.from, range.to, bucketCount);
 
   return (
     <Box component="main" sx={{ pb: 6 }}>
@@ -202,14 +242,14 @@ export default function EndpointDetailsPage() {
                     height={280}
                     series={[
                       {
-                        data: latencyPoints.map((point) => point.value),
+                        data: bucketedData.map((point) => point.latency),
                         label: "Latency",
                         color: "#1976d2",
                       },
                     ]}
                     xAxis={[
                       {
-                        data: latencyPoints.map((point) => point.time),
+                        data: bucketedData.map((point) => point.time),
                         scaleType: "band",
                       },
                     ]}
@@ -226,14 +266,14 @@ export default function EndpointDetailsPage() {
                     height={280}
                     series={[
                       {
-                        data: errorPoints.map((point) => point.value),
+                        data: bucketedData.map((point) => point.errors),
                         label: "Errors",
                         color: "#ef5350",
                       },
                     ]}
                     xAxis={[
                       {
-                        data: errorPoints.map((point) => point.time),
+                        data: bucketedData.map((point) => point.time),
                         scaleType: "band",
                       },
                     ]}
