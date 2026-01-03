@@ -28,6 +28,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Checkbox,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -105,6 +106,7 @@ export default function HomePageClient() {
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
   const [query, setQuery] = React.useState("");
   const [bulkCount, setBulkCount] = React.useState(1);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [refreshSec, setRefreshSec] = React.useState<number | null>(
@@ -122,6 +124,12 @@ export default function HomePageClient() {
   const filteredEndpoints = endpoints.filter((endpoint) =>
     endpoint.name.toLowerCase().includes(query.toLowerCase()),
   );
+  const selectedCount = selectedIds.length;
+  const allSelected =
+    filteredEndpoints.length > 0 &&
+    selectedIds.length === filteredEndpoints.length;
+  const someSelected =
+    selectedIds.length > 0 && selectedIds.length < filteredEndpoints.length;
 
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -296,9 +304,62 @@ export default function HomePageClient() {
       const confirmed = window.confirm("Удалить этот endpoint?");
       if (!confirmed) return;
       await deleteEndpoint(id);
+      setSelectedIds((prev) => prev.filter((item) => item !== id));
       await loadData();
     } catch (err) {
       setError("Не удалось удалить endpoint.");
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(filteredEndpoints.map((endpoint) => endpoint.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const handleBulkToggle = async (enabled: boolean) => {
+    try {
+      const targets = endpoints.filter((endpoint) =>
+        selectedIds.includes(endpoint.id),
+      );
+      await Promise.all(
+        targets.map((endpoint) =>
+          updateEndpoint(endpoint.id, { ...buildRequest(endpoint), enabled }),
+        ),
+      );
+      setEndpoints((prev) =>
+        prev.map((endpoint) =>
+          selectedIds.includes(endpoint.id)
+            ? { ...endpoint, enabled }
+            : endpoint,
+        ),
+      );
+      setSelectedIds([]);
+    } catch (err) {
+      setError("Не удалось обновить выбранные endpoints.");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    const confirmed = window.confirm("Удалить выбранные endpoints?");
+    if (!confirmed) return;
+    try {
+      await Promise.all(selectedIds.map((id) => deleteEndpoint(id)));
+      setEndpoints((prev) =>
+        prev.filter((endpoint) => !selectedIds.includes(endpoint.id)),
+      );
+      setSelectedIds([]);
+    } catch (err) {
+      setError("Не удалось удалить выбранные endpoints.");
     }
   };
 
@@ -414,21 +475,51 @@ export default function HomePageClient() {
 
           <Card>
             <CardContent>
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                spacing={2}
-                alignItems={{ xs: "stretch", md: "center" }}
-                justifyContent="space-between"
-              >
-                <TextField
-                  label="Поиск endpoint"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  size="small"
-                />
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Chip
-                    label={`${filteredEndpoints.length} endpoints`}
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={2}
+              alignItems={{ xs: "stretch", md: "center" }}
+              justifyContent="space-between"
+            >
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={2}
+                  alignItems={{ xs: "stretch", md: "center" }}
+                >
+                  <TextField
+                    label="Поиск endpoint"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    size="small"
+                  />
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Button
+                      variant="outlined"
+                      disabled={selectedCount === 0}
+                      onClick={() => handleBulkToggle(true)}
+                    >
+                      Включить
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      disabled={selectedCount === 0}
+                      onClick={() => handleBulkToggle(false)}
+                    >
+                      Отключить
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      disabled={selectedCount === 0}
+                      onClick={handleBulkDelete}
+                    >
+                      Удалить
+                    </Button>
+                  </Stack>
+                </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  label={`${filteredEndpoints.length} endpoints`}
                     color="primary"
                     variant="outlined"
                   />
@@ -443,6 +534,15 @@ export default function HomePageClient() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={allSelected}
+                        indeterminate={someSelected}
+                        onChange={(event) =>
+                          handleSelectAll(event.target.checked)
+                        }
+                      />
+                    </TableCell>
                     <TableCell>Endpoint</TableCell>
                     <TableCell>Статус</TableCell>
                     <TableCell>p50</TableCell>
@@ -458,6 +558,12 @@ export default function HomePageClient() {
                     const metrics = endpoint.summary?.windowStats;
                     return (
                       <TableRow key={endpoint.id} hover>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedIds.includes(endpoint.id)}
+                            onChange={() => handleSelectRow(endpoint.id)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <Stack spacing={0.5}>
                             <Stack direction="row" spacing={1} alignItems="center">
