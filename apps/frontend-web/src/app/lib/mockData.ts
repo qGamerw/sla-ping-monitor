@@ -23,6 +23,10 @@ export interface EndpointSummary {
   name: string;
   url: string;
   method: string;
+  headers: Record<string, string>;
+  timeoutMs: number;
+  expectedStatus: number[];
+  intervalSec: number;
   status: Status;
   enabled: boolean;
   tags: string[];
@@ -47,6 +51,12 @@ export const initialEndpoints: EndpointSummary[] = [
     name: "Payments API",
     url: "https://api.example.com/payments/health",
     method: "GET",
+    headers: {
+      accept: "text/plain",
+    },
+    timeoutMs: 3000,
+    expectedStatus: [200, 399],
+    intervalSec: 5,
     status: "OK",
     enabled: true,
     tags: ["payments", "critical"],
@@ -100,6 +110,12 @@ export const initialEndpoints: EndpointSummary[] = [
     name: "Auth Service",
     url: "https://auth.example.com/healthz",
     method: "GET",
+    headers: {
+      accept: "text/plain",
+    },
+    timeoutMs: 3000,
+    expectedStatus: [200, 399],
+    intervalSec: 10,
     status: "DEGRADED",
     enabled: true,
     tags: ["auth", "sso"],
@@ -153,6 +169,12 @@ export const initialEndpoints: EndpointSummary[] = [
     name: "Inventory",
     url: "https://inventory.example.com/ping",
     method: "POST",
+    headers: {
+      accept: "application/json",
+    },
+    timeoutMs: 5000,
+    expectedStatus: [200, 299],
+    intervalSec: 30,
     status: "DOWN",
     enabled: false,
     tags: ["warehouse"],

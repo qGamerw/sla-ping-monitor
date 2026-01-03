@@ -13,6 +13,7 @@ import {
   Stack,
   Switch,
   TextField,
+  Typography,
 } from "@mui/material";
 import type { EndpointSummary } from "../app/lib/mockData";
 
@@ -20,6 +21,10 @@ export interface EndpointDraft {
   name: string;
   url: string;
   method: string;
+  headers: Record<string, string>;
+  timeoutMs: number;
+  expectedStatus: number[];
+  intervalSec: number;
   enabled: boolean;
   tags: string[];
 }
@@ -36,6 +41,12 @@ const defaultDraft: EndpointDraft = {
   name: "",
   url: "https://",
   method: "GET",
+  headers: {
+    accept: "text/plain",
+  },
+  timeoutMs: 3000,
+  expectedStatus: [200, 399],
+  intervalSec: 5,
   enabled: true,
   tags: [],
 };
@@ -48,6 +59,12 @@ export default function EndpointFormDialog({
   onSave,
 }: EndpointFormDialogProps) {
   const [draft, setDraft] = React.useState<EndpointDraft>(defaultDraft);
+  const [headers, setHeaders] = React.useState(
+    Object.entries(defaultDraft.headers).map(([key, value]) => ({ key, value })),
+  );
+  const [expectedStatusInput, setExpectedStatusInput] = React.useState(
+    defaultDraft.expectedStatus.join(", "),
+  );
 
   React.useEffect(() => {
     if (initial) {
@@ -55,12 +72,24 @@ export default function EndpointFormDialog({
         name: initial.name,
         url: initial.url,
         method: initial.method,
+        headers: initial.headers,
+        timeoutMs: initial.timeoutMs,
+        expectedStatus: initial.expectedStatus,
+        intervalSec: initial.intervalSec,
         enabled: initial.enabled,
         tags: initial.tags,
       });
+      setHeaders(
+        Object.entries(initial.headers).map(([key, value]) => ({ key, value })),
+      );
+      setExpectedStatusInput(initial.expectedStatus.join(", "));
       return;
     }
     setDraft(defaultDraft);
+    setHeaders(
+      Object.entries(defaultDraft.headers).map(([key, value]) => ({ key, value })),
+    );
+    setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
   }, [initial, open]);
 
   const handleChange = (field: keyof EndpointDraft) =>
@@ -76,7 +105,21 @@ export default function EndpointFormDialog({
   };
 
   const handleSave = () => {
-    onSave(draft);
+    const headerMap = headers.reduce<Record<string, string>>((acc, item) => {
+      if (item.key.trim()) {
+        acc[item.key.trim()] = item.value.trim();
+      }
+      return acc;
+    }, {});
+    const expectedStatus = expectedStatusInput
+      .split(",")
+      .map((value) => Number.parseInt(value.trim(), 10))
+      .filter((value) => Number.isFinite(value));
+    onSave({
+      ...draft,
+      headers: headerMap,
+      expectedStatus,
+    });
   };
 
   return (
@@ -102,6 +145,85 @@ export default function EndpointFormDialog({
             label="Метод"
             value={draft.method}
             onChange={handleChange("method")}
+            fullWidth
+          />
+          <Stack spacing={1}>
+            <Typography variant="subtitle2">Headers</Typography>
+            {headers.map((header, index) => (
+              <Stack key={`${header.key}-${index}`} direction="row" spacing={1}>
+                <TextField
+                  label="Ключ"
+                  value={header.key}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setHeaders((prev) =>
+                      prev.map((item, idx) =>
+                        idx === index ? { ...item, key: value } : item,
+                      ),
+                    );
+                  }}
+                  fullWidth
+                />
+                <TextField
+                  label="Значение"
+                  value={header.value}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setHeaders((prev) =>
+                      prev.map((item, idx) =>
+                        idx === index ? { ...item, value } : item,
+                      ),
+                    );
+                  }}
+                  fullWidth
+                />
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={() =>
+                    setHeaders((prev) => prev.filter((_, idx) => idx !== index))
+                  }
+                >
+                  Удалить
+                </Button>
+              </Stack>
+            ))}
+            <Button
+              variant="text"
+              onClick={() => setHeaders((prev) => [...prev, { key: "", value: "" }])}
+            >
+              Добавить header
+            </Button>
+          </Stack>
+          <TextField
+            label="Timeout (ms)"
+            type="number"
+            value={draft.timeoutMs}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                timeoutMs: Number(event.target.value),
+              }))
+            }
+            fullWidth
+          />
+          <TextField
+            label="Expected status"
+            value={expectedStatusInput}
+            onChange={(event) => setExpectedStatusInput(event.target.value)}
+            helperText="Введите статусы через запятую, например 200, 399"
+            fullWidth
+          />
+          <TextField
+            label="Интервал (сек)"
+            type="number"
+            value={draft.intervalSec}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                intervalSec: Number(event.target.value),
+              }))
+            }
             fullWidth
           />
           <Autocomplete
