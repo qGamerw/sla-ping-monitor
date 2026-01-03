@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
 import {
   Alert,
@@ -92,8 +92,13 @@ const buildBuckets = (
 };
 
 export default function EndpointDetailsPage() {
-  const params = useParams<{ id: string }>();
-  const [window, setWindow] = React.useState<MetricsWindow>("1h");
+  const pathParams = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const resolveWindow = (value: string | null): MetricsWindow =>
+    windowOptions.includes(value as MetricsWindow) ? (value as MetricsWindow) : "1h";
+  const initialWindow = resolveWindow(searchParams.get("window"));
+  const [window, setWindow] = React.useState<MetricsWindow>(initialWindow);
   const [endpoint, setEndpoint] = React.useState<EndpointResponse | null>(null);
   const [stats, setStats] = React.useState<StatsResponse | null>(null);
   const [checks, setChecks] = React.useState<CheckResultResponse[]>([]);
@@ -105,7 +110,7 @@ export default function EndpointDetailsPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   const loadData = React.useCallback(async () => {
-    if (!params.id) return;
+    if (!pathParams.id) return;
     setLoading(true);
     setError(null);
     try {
@@ -113,9 +118,9 @@ export default function EndpointDetailsPage() {
       const to = dayjs();
       const from = to.subtract(windowSec, "second");
       const [endpointData, statsData, checksData] = await Promise.all([
-        fetchEndpoint(params.id),
-        fetchEndpointStats(params.id, windowSec),
-        fetchEndpointChecks(params.id, from.toISOString(), to.toISOString()),
+        fetchEndpoint(pathParams.id),
+        fetchEndpointStats(pathParams.id, windowSec),
+        fetchEndpointChecks(pathParams.id, from.toISOString(), to.toISOString()),
       ]);
       setEndpoint(endpointData ?? null);
       setStats(statsData ?? null);
@@ -126,17 +131,34 @@ export default function EndpointDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id, window]);
+  }, [pathParams.id, window]);
 
   React.useEffect(() => {
+    const paramWindow = resolveWindow(searchParams.get("window"));
+    if (paramWindow !== window) {
+      setWindow(paramWindow);
+      return;
+    }
     void loadData();
-  }, [loadData]);
+  }, [loadData, searchParams, window]);
+
+  const handleWindowChange = (value: MetricsWindow) => {
+    setWindow(value);
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("window", value);
+    router.replace(`/endpoints/${pathParams.id}?${query.toString()}`);
+  };
 
   if (!endpoint && !loading) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
         <Typography variant="h5">Endpoint не найден</Typography>
-        <Button component={Link} href="/" sx={{ mt: 2 }} variant="outlined">
+        <Button
+          component={Link}
+          href={`/?window=${window}`}
+          sx={{ mt: 2 }}
+          variant="outlined"
+        >
           Назад к списку
         </Button>
       </Container>
@@ -154,7 +176,7 @@ export default function EndpointDetailsPage() {
       <Container maxWidth="lg" sx={{ pt: 4 }}>
         <Stack spacing={3}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <IconButton component={Link} href="/">
+            <IconButton component={Link} href={`/?window=${window}`}>
               <ArrowBackIcon />
             </IconButton>
             <Box>
@@ -218,7 +240,7 @@ export default function EndpointDetailsPage() {
                     label="Окно"
                     value={window}
                     onChange={(event) =>
-                      setWindow(event.target.value as MetricsWindow)
+                      handleWindowChange(event.target.value as MetricsWindow)
                     }
                   >
                     {windowOptions.map((item) => (

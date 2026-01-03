@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
 import {
   Alert,
@@ -78,7 +79,12 @@ const buildRequest = (endpoint: EndpointResponse): EndpointRequest => ({
 });
 
 export default function HomePage() {
-  const [window, setWindow] = React.useState<MetricsWindow>("15m");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const resolveWindow = (value: string | null): MetricsWindow =>
+    windowOptions.includes(value as MetricsWindow) ? (value as MetricsWindow) : "15m";
+  const initialWindow = resolveWindow(searchParams.get("window"));
+  const [window, setWindow] = React.useState<MetricsWindow>(initialWindow);
   const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
@@ -152,8 +158,20 @@ export default function HomePage() {
   }, [window]);
 
   React.useEffect(() => {
+    const paramWindow = resolveWindow(searchParams.get("window"));
+    if (paramWindow !== window) {
+      setWindow(paramWindow);
+      return;
+    }
     void loadData();
-  }, [loadData]);
+  }, [loadData, searchParams, window]);
+
+  const handleWindowChange = (value: MetricsWindow) => {
+    setWindow(value);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("window", value);
+    router.replace(`/?${params.toString()}`);
+  };
 
   const handleCreate = () => {
     setEditing(null);
@@ -263,7 +281,7 @@ export default function HomePage() {
                     label="Окно"
                     value={window}
                     onChange={(event) =>
-                      setWindow(event.target.value as MetricsWindow)
+                      handleWindowChange(event.target.value as MetricsWindow)
                     }
                   >
                     {windowOptions.map((item) => (
@@ -370,7 +388,7 @@ export default function HomePage() {
                             <Tooltip title="Открыть">
                               <IconButton
                                 component={Link}
-                                href={`/endpoints/${endpoint.id}`}
+                                href={`/endpoints/${endpoint.id}?window=${window}`}
                                 size="small"
                               >
                                 <OpenInNewIcon fontSize="small" />
