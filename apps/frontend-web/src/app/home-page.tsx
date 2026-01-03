@@ -293,6 +293,8 @@ export default function HomePageClient() {
 
   const handleDelete = async (id: string) => {
     try {
+      const confirmed = window.confirm("Удалить этот endpoint?");
+      if (!confirmed) return;
       await deleteEndpoint(id);
       await loadData();
     } catch (err) {

@@ -15,6 +15,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import type { EndpointRequest, EndpointResponse } from "../app/lib/apiTypes";
 
 export type EndpointDraft = Omit<EndpointRequest, "headers" | "tags"> & {
@@ -188,15 +189,20 @@ export default function EndpointFormDialog({
                   }}
                   fullWidth
                 />
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  onClick={() =>
-                    setHeaders((prev) => prev.filter((_, idx) => idx !== index))
-                  }
+                <IconButton
+                  aria-label="Удалить header"
+                  onClick={() => {
+                    const confirmed = window.confirm(
+                      "Удалить этот заголовок?",
+                    );
+                    if (!confirmed) return;
+                    setHeaders((prev) =>
+                      prev.filter((_, idx) => idx !== index),
+                    );
+                  }}
                 >
-                  Удалить
-                </Button>
+                  <DeleteIcon />
+                </IconButton>
               </Stack>
             ))}
             <Button
