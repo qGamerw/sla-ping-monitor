@@ -7,3 +7,6 @@
 /gradle/wrapper/gradle-wrapper.jar
 /gradle/wrapper/gradle-wrapper.properties
 /.idea/
+/apps/frontend-web/.next/
+/apps/frontend-web/node_modules/
+/apps/frontend-web/package-lock.json

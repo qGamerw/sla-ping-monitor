@@ -49,6 +49,9 @@ class EndpointEntity(
     @Column(name = "lease_owner")
     var leaseOwner: String? = null,
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    var tags: List<String>? = null,
+
     @Column(name = "lease_until")
     var leaseUntil: Instant? = null,
 
@@ -80,4 +83,9 @@ class EndpointEntity(
     fun onUpdate() {
         updatedAt = Instant.now()
     }
+
+    override fun toString(): String {
+        return "EndpointEntity(id=$id, name='$name')"
+    }
+
 }

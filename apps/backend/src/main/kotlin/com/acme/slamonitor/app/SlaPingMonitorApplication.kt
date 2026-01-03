@@ -3,6 +3,7 @@ package com.acme.slamonitor.app
 import com.acme.slamonitor.configuration.aspectBean
 import com.acme.slamonitor.configuration.beanPostProcessor
 import com.acme.slamonitor.configuration.controllerBeans
+import com.acme.slamonitor.configuration.corsMvcBeans
 import com.acme.slamonitor.configuration.dispatchersBeans
 import com.acme.slamonitor.configuration.ktorBeans
 import com.acme.slamonitor.configuration.serviceBeans
@@ -25,12 +26,13 @@ class SlaPingMonitorApplication
 fun main(args: Array<String>) {
     runApplication<SlaPingMonitorApplication>(*args) {
         addInitializers(
-            ktorBeans,
             controllerBeans,
-            dispatchersBeans,
-            serviceBeans,
+            corsMvcBeans,
             beanPostProcessor,
-            aspectBean
+            serviceBeans,
+            aspectBean,
+            ktorBeans,
+            dispatchersBeans,
         )
     }
 }
