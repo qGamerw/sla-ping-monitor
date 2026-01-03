@@ -41,7 +41,11 @@ const formatMs = (value?: number | null) =>
 const formatPercent = (value?: number | null) =>
   value === null || value === undefined ? "—" : `${value.toFixed(1)}%`;
 
-const mapStatus = (stats?: StatsResponse): Status => {
+const mapStatus = (
+  stats: StatsResponse | undefined,
+  enabled: boolean,
+): Status => {
+  if (!enabled) return "OFF";
   if (!stats || stats.lastStatus === null || stats.lastStatus === undefined) {
     return "DEGRADED";
   }
@@ -247,7 +251,9 @@ export default function EndpointDetailsClient() {
                 <Stack spacing={1}>
                   <Typography variant="subtitle1">Текущий статус</Typography>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <StatusChip status={mapStatus(stats ?? undefined)} />
+                    <StatusChip
+                      status={mapStatus(stats ?? undefined, endpoint?.enabled ?? true)}
+                    />
                     <Typography variant="body2" color="text.secondary">
                       Последняя проверка{" "}
                       {checks.length > 0
@@ -259,6 +265,12 @@ export default function EndpointDetailsClient() {
                   </Stack>
                 </Stack>
                 <Stack direction="row" spacing={3} alignItems="center">
+                  <Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      p50
+                    </Typography>
+                    <Typography variant="h6">{formatMs(stats?.p50)}</Typography>
+                  </Stack>
                   <Stack>
                     <Typography variant="caption" color="text.secondary">
                       p95

@@ -59,7 +59,11 @@ const formatMs = (value?: number | null) =>
 const formatPercent = (value?: number | null) =>
   value === null || value === undefined ? "—" : `${value.toFixed(1)}%`;
 
-const mapStatus = (summary?: EndpointSummaryResponse): Status => {
+const mapStatus = (
+  summary: EndpointSummaryResponse | undefined,
+  enabled: boolean,
+): Status => {
+  if (!enabled) return "OFF";
   if (!summary) return "DEGRADED";
   if (summary.lastSuccess === true) return "OK";
   if (summary.lastSuccess === false) return "DOWN";
@@ -400,6 +404,7 @@ export default function HomePageClient() {
                   <TableRow>
                     <TableCell>Endpoint</TableCell>
                     <TableCell>Статус</TableCell>
+                    <TableCell>p50</TableCell>
                     <TableCell>p95</TableCell>
                     <TableCell>p99</TableCell>
                     <TableCell>Error rate</TableCell>
@@ -438,8 +443,11 @@ export default function HomePageClient() {
                           </Stack>
                         </TableCell>
                         <TableCell>
-                          <StatusChip status={mapStatus(endpoint.summary)} />
+                          <StatusChip
+                            status={mapStatus(endpoint.summary, endpoint.enabled)}
+                          />
                         </TableCell>
+                        <TableCell>{formatMs(metrics?.p50)}</TableCell>
                         <TableCell>{formatMs(metrics?.p95)}</TableCell>
                         <TableCell>{formatMs(metrics?.p99)}</TableCell>
                         <TableCell>{formatPercent(metrics?.errorRate)}</TableCell>

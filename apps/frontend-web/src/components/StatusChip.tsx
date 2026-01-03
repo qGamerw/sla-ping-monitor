@@ -1,10 +1,14 @@
 import { Chip } from "@mui/material";
-export type Status = "OK" | "DEGRADED" | "DOWN";
+export type Status = "OK" | "DEGRADED" | "DOWN" | "OFF";
 
-const statusColor: Record<Status, "success" | "warning" | "error"> = {
+const statusColor: Record<
+  Status,
+  "success" | "warning" | "error" | "default"
+> = {
   OK: "success",
   DEGRADED: "warning",
   DOWN: "error",
+  OFF: "default",
 };
 
 export default function StatusChip({ status }: { status: Status }) {
