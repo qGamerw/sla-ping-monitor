@@ -357,7 +357,9 @@ export default function HomePageClient() {
                       labelId="refresh-select"
                       label="Refresh"
                       value={refreshSec ?? ""}
-                      onChange={(event) => handleRefreshChange(event.target.value)}
+                      onChange={(event) =>
+                        handleRefreshChange(String(event.target.value))
+                      }
                     >
                       <MenuItem value="">Не обновлять</MenuItem>
                       <MenuItem value={15}>15 секунд</MenuItem>
