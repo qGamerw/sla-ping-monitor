@@ -38,6 +38,7 @@ open class EndpointServiceImpl(
             expectedStatus = request.expectedStatus ?: DEFAULT_EXPECTED_STATUS,
             intervalSec = request.intervalSec ?: DEFAULT_INTERVAL_SEC,
             enabled = request.enabled ?: true,
+            tags = request.tags,
         )
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Create endpoint $id") {
             endpointRepository.save(entity)

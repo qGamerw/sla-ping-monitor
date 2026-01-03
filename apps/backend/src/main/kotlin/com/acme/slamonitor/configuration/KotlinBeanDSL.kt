@@ -51,6 +51,8 @@ import org.springframework.context.SmartLifecycle
 import org.springframework.context.support.beans
 import org.springframework.core.Ordered
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 val controllerBeans = beans {
     bean(::GlobalExceptionHandler)
@@ -74,6 +76,19 @@ val controllerBeans = beans {
             ),
             failFast = false
         )
+    }
+}
+
+val corsMvcBeans = beans {
+    bean<WebMvcConfigurer> {
+        object : WebMvcConfigurer {
+            override fun addCorsMappings(registry: CorsRegistry) {
+                registry.addMapping("/**")
+                    .allowedOrigins("http://localhost:3000")
+                    .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                    .allowedHeaders("*")
+            }
+        }
     }
 }
 
