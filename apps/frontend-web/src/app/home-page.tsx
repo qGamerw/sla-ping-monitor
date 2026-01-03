@@ -103,6 +103,7 @@ export default function HomePageClient() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
   const [query, setQuery] = React.useState("");
+  const [bulkCount, setBulkCount] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [refreshSec, setRefreshSec] = React.useState<number | null>(
@@ -222,6 +223,33 @@ export default function HomePageClient() {
   const handleCreate = () => {
     setEditing(null);
     setDialogOpen(true);
+  };
+
+  const handleBulkCreate = async () => {
+    if (bulkCount <= 0) {
+      setError("Количество для быстрого создания должно быть больше нуля.");
+      return;
+    }
+    try {
+      const baseName = `Endpoint ${dayjs().format("HHmmss")}`;
+      const requests = Array.from({ length: bulkCount }, (_, index) => ({
+        name: `${baseName} #${index + 1}`,
+        url: `http://localhost:4430/status/200?item=${index + 1}`,
+        method: "GET",
+        headers: { accept: "text/plain" },
+        timeoutMs: 3000,
+        expectedStatus: [200, 399],
+        intervalSec: 5,
+        enabled: true,
+        tags: ["bulk"],
+      }));
+      for (const request of requests) {
+        await createEndpoint(request);
+      }
+      await loadData();
+    } catch (err) {
+      setError("Не удалось создать endpoints.");
+    }
   };
 
   const handleEdit = (endpoint: EndpointResponse) => {
@@ -381,12 +409,34 @@ export default function HomePageClient() {
                 alignItems={{ xs: "stretch", md: "center" }}
                 justifyContent="space-between"
               >
-                <TextField
-                  label="Поиск endpoint"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  size="small"
-                />
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={2}
+                  alignItems={{ xs: "stretch", md: "center" }}
+                >
+                  <TextField
+                    label="Поиск endpoint"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    size="small"
+                  />
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TextField
+                      label="Быстро создать"
+                      type="number"
+                      value={bulkCount}
+                      onChange={(event) =>
+                        setBulkCount(Number(event.target.value))
+                      }
+                      size="small"
+                      inputProps={{ min: 1 }}
+                      sx={{ width: 140 }}
+                    />
+                    <Button variant="outlined" onClick={handleBulkCreate}>
+                      Создать
+                    </Button>
+                  </Stack>
+                </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Chip
                     label={`${filteredEndpoints.length} endpoints`}
