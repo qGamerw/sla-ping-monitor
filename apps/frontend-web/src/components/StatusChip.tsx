@@ -1,5 +1,5 @@
 import { Chip } from "@mui/material";
-import type { Status } from "../app/lib/mockData";
+export type Status = "OK" | "DEGRADED" | "DOWN";
 
 const statusColor: Record<Status, "success" | "warning" | "error"> = {
   OK: "success",

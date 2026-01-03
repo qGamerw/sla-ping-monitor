@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import dayjs from "dayjs";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -31,31 +32,65 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import EndpointFormDialog, {
-  EndpointDraft,
-} from "../components/EndpointFormDialog";
-import StatusChip from "../components/StatusChip";
+import EndpointFormDialog from "../components/EndpointFormDialog";
+import StatusChip, { type Status } from "../components/StatusChip";
 import {
-  initialEndpoints,
-  windowOptions,
-  type EndpointSummary,
-  type MetricsWindow,
-} from "./lib/mockData";
+  createEndpoint,
+  deleteEndpoint,
+  fetchEndpoints,
+  fetchEndpointSummary,
+  updateEndpoint,
+} from "./lib/api";
+import type {
+  EndpointRequest,
+  EndpointResponse,
+  EndpointSummaryResponse,
+  MetricsWindow,
+} from "./lib/apiTypes";
+import { windowOptions, windowToSeconds } from "./lib/windows";
 
-const formatMs = (value: number) => `${value.toFixed(0)} ms`;
-const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+interface EndpointRow extends EndpointResponse {
+  summary?: EndpointSummaryResponse;
+}
+
+const formatMs = (value?: number | null) =>
+  value === null || value === undefined ? "—" : `${value.toFixed(0)} ms`;
+const formatPercent = (value?: number | null) =>
+  value === null || value === undefined ? "—" : `${value.toFixed(1)}%`;
+
+const mapStatus = (summary?: EndpointSummaryResponse): Status => {
+  if (!summary) return "DEGRADED";
+  if (summary.lastSuccess === true) return "OK";
+  if (summary.lastSuccess === false) return "DOWN";
+  return "DEGRADED";
+};
+
+const buildRequest = (endpoint: EndpointResponse): EndpointRequest => ({
+  name: endpoint.name,
+  url: endpoint.url,
+  method: endpoint.method,
+  headers: endpoint.headers ?? null,
+  timeoutMs: endpoint.timeoutMs,
+  expectedStatus: endpoint.expectedStatus,
+  intervalSec: endpoint.intervalSec,
+  enabled: endpoint.enabled,
+  tags: endpoint.tags ?? null,
+});
 
 export default function HomePage() {
   const [window, setWindow] = React.useState<MetricsWindow>("15m");
-  const [endpoints, setEndpoints] = React.useState<EndpointSummary[]>(
-    initialEndpoints,
-  );
+  const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<EndpointSummary | null>(null);
+  const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
   const [query, setQuery] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const availableTags = React.useMemo(
-    () => Array.from(new Set(endpoints.flatMap((item) => item.tags))),
+    () =>
+      Array.from(
+        new Set(endpoints.flatMap((item) => item.tags ?? [])),
+      ).sort(),
     [endpoints],
   );
 
@@ -63,71 +98,78 @@ export default function HomePage() {
     endpoint.name.toLowerCase().includes(query.toLowerCase()),
   );
 
+  const loadData = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const windowSec = windowToSeconds(window);
+      const [endpointList, summaryList] = await Promise.all([
+        fetchEndpoints(),
+        fetchEndpointSummary(windowSec),
+      ]);
+      const summaryMap = new Map(
+        summaryList.map((summary) => [summary.id, summary]),
+      );
+      setEndpoints(
+        endpointList.map((endpoint) => ({
+          ...endpoint,
+          summary: summaryMap.get(endpoint.id),
+        })),
+      );
+    } catch (err) {
+      setError("Не удалось загрузить данные. Проверьте соединение с API.");
+    } finally {
+      setLoading(false);
+    }
+  }, [window]);
+
+  React.useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
   const handleCreate = () => {
     setEditing(null);
     setDialogOpen(true);
   };
 
-  const handleEdit = (endpoint: EndpointSummary) => {
+  const handleEdit = (endpoint: EndpointResponse) => {
     setEditing(endpoint);
     setDialogOpen(true);
   };
 
-  const handleSave = (draft: EndpointDraft) => {
-    if (editing) {
-      setEndpoints((prev) =>
-        prev.map((endpoint) =>
-          endpoint.id === editing.id
-            ? {
-                ...endpoint,
-                name: draft.name,
-                url: draft.url,
-                method: draft.method,
-                headers: draft.headers,
-                timeoutMs: draft.timeoutMs,
-                expectedStatus: draft.expectedStatus,
-                intervalSec: draft.intervalSec,
-                enabled: draft.enabled,
-                tags: draft.tags,
-              }
-            : endpoint,
-        ),
-      );
-    } else {
-      const id = draft.name.toLowerCase().replace(/\s+/g, "-");
-      setEndpoints((prev) => [
-        {
-          id,
-          name: draft.name,
-          url: draft.url,
-          method: draft.method,
-          headers: draft.headers,
-          timeoutMs: draft.timeoutMs,
-          expectedStatus: draft.expectedStatus,
-          intervalSec: draft.intervalSec,
-          status: "OK",
-          enabled: draft.enabled,
-          tags: draft.tags,
-          metrics: prev[0]?.metrics ?? initialEndpoints[0].metrics,
-        },
-        ...prev,
-      ]);
+  const handleSave = async (draft: EndpointRequest) => {
+    try {
+      if (editing) {
+        await updateEndpoint(editing.id, draft);
+      } else {
+        await createEndpoint(draft);
+      }
+      setDialogOpen(false);
+      await loadData();
+    } catch (err) {
+      setError("Не удалось сохранить endpoint. Проверьте данные формы.");
     }
-    setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setEndpoints((prev) => prev.filter((endpoint) => endpoint.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteEndpoint(id);
+      await loadData();
+    } catch (err) {
+      setError("Не удалось удалить endpoint.");
+    }
   };
 
-  const handleToggle = (id: string) => {
-    setEndpoints((prev) =>
-      prev.map((endpoint) =>
-        endpoint.id === id
-          ? { ...endpoint, enabled: !endpoint.enabled }
-          : endpoint,
-      ),
-    );
+  const handleToggle = async (endpoint: EndpointResponse) => {
+    try {
+      await updateEndpoint(endpoint.id, {
+        ...buildRequest(endpoint),
+        enabled: !endpoint.enabled,
+      });
+      await loadData();
+    } catch (err) {
+      setError("Не удалось обновить состояние endpoint.");
+    }
   };
 
   return (
@@ -156,6 +198,8 @@ export default function HomePage() {
               Создать endpoint
             </Button>
           </Stack>
+
+          {error && <Alert severity="error">{error}</Alert>}
 
           <Card>
             <CardContent>
@@ -235,7 +279,7 @@ export default function HomePage() {
                 </TableHead>
                 <TableBody>
                   {filteredEndpoints.map((endpoint) => {
-                    const metrics = endpoint.metrics[window];
+                    const metrics = endpoint.summary?.windowStats;
                     return (
                       <TableRow key={endpoint.id} hover>
                         <TableCell>
@@ -252,7 +296,7 @@ export default function HomePage() {
                               {endpoint.method} {endpoint.url}
                             </Typography>
                             <Stack direction="row" spacing={1}>
-                              {endpoint.tags.map((tag) => (
+                              {(endpoint.tags ?? []).map((tag) => (
                                 <Chip
                                   key={tag}
                                   label={tag}
@@ -264,13 +308,15 @@ export default function HomePage() {
                           </Stack>
                         </TableCell>
                         <TableCell>
-                          <StatusChip status={endpoint.status} />
+                          <StatusChip status={mapStatus(endpoint.summary)} />
                         </TableCell>
-                        <TableCell>{formatMs(metrics.p95)}</TableCell>
-                        <TableCell>{formatMs(metrics.p99)}</TableCell>
-                        <TableCell>{formatPercent(metrics.errorRate)}</TableCell>
+                        <TableCell>{formatMs(metrics?.p95)}</TableCell>
+                        <TableCell>{formatMs(metrics?.p99)}</TableCell>
+                        <TableCell>{formatPercent(metrics?.errorRate)}</TableCell>
                         <TableCell>
-                          {dayjs(metrics.lastCheck).format("HH:mm:ss")}
+                          {endpoint.summary?.lastCheckAt
+                            ? dayjs(endpoint.summary.lastCheckAt).format("HH:mm:ss")
+                            : "—"}
                         </TableCell>
                         <TableCell align="right">
                           <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -278,7 +324,7 @@ export default function HomePage() {
                               <Switch
                                 size="small"
                                 checked={endpoint.enabled}
-                                onChange={() => handleToggle(endpoint.id)}
+                                onChange={() => handleToggle(endpoint)}
                               />
                             </Tooltip>
                             <Tooltip title="Открыть">
@@ -314,6 +360,11 @@ export default function HomePage() {
                   })}
                 </TableBody>
               </Table>
+              {loading && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                  Загрузка данных...
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Stack>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -21,28 +22,74 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { BarChart, LineChart } from "@mui/x-charts";
-import StatusChip from "../../../components/StatusChip";
+import StatusChip, { type Status } from "../../../components/StatusChip";
 import {
-  errorSeries,
-  initialEndpoints,
-  latencySeries,
-  windowOptions,
-  type MetricsWindow,
-} from "../../lib/mockData";
+  fetchEndpoint,
+  fetchEndpointChecks,
+  fetchEndpointStats,
+} from "../../lib/api";
+import type {
+  CheckResultResponse,
+  EndpointResponse,
+  MetricsWindow,
+  StatsResponse,
+} from "../../lib/apiTypes";
+import { windowOptions, windowToSeconds } from "../../lib/windows";
 
-const formatMs = (value: number) => `${value.toFixed(0)} ms`;
-const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+const formatMs = (value?: number | null) =>
+  value === null || value === undefined ? "—" : `${value.toFixed(0)} ms`;
+const formatPercent = (value?: number | null) =>
+  value === null || value === undefined ? "—" : `${value.toFixed(1)}%`;
+
+const mapStatus = (stats?: StatsResponse): Status => {
+  if (!stats || stats.lastStatus === null || stats.lastStatus === undefined) {
+    return "DEGRADED";
+  }
+  if (stats.lastStatus >= 200 && stats.lastStatus < 400) {
+    return "OK";
+  }
+  return "DOWN";
+};
+
+const formatChartTime = (value: string) => dayjs(value).format("HH:mm");
 
 export default function EndpointDetailsPage() {
   const params = useParams<{ id: string }>();
   const [window, setWindow] = React.useState<MetricsWindow>("1h");
+  const [endpoint, setEndpoint] = React.useState<EndpointResponse | null>(null);
+  const [stats, setStats] = React.useState<StatsResponse | null>(null);
+  const [checks, setChecks] = React.useState<CheckResultResponse[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const endpoint = React.useMemo(
-    () => initialEndpoints.find((item) => item.id === params.id),
-    [params.id],
-  );
+  const loadData = React.useCallback(async () => {
+    if (!params.id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const windowSec = windowToSeconds(window);
+      const to = dayjs();
+      const from = to.subtract(windowSec, "second");
+      const [endpointData, statsData, checksData] = await Promise.all([
+        fetchEndpoint(params.id),
+        fetchEndpointStats(params.id, windowSec),
+        fetchEndpointChecks(params.id, from.toISOString(), to.toISOString()),
+      ]);
+      setEndpoint(endpointData ?? null);
+      setStats(statsData ?? null);
+      setChecks(checksData);
+    } catch (err) {
+      setError("Не удалось загрузить данные по endpoint.");
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id, window]);
 
-  if (!endpoint) {
+  React.useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  if (!endpoint && !loading) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
         <Typography variant="h5">Endpoint не найден</Typography>
@@ -53,9 +100,14 @@ export default function EndpointDetailsPage() {
     );
   }
 
-  const metrics = endpoint.metrics[window];
-  const latencyPoints = latencySeries[window];
-  const errorPoints = errorSeries[window];
+  const latencyPoints = checks.map((check) => ({
+    time: formatChartTime(check.startedAt),
+    value: check.latencyMs,
+  }));
+  const errorPoints = checks.map((check) => ({
+    time: formatChartTime(check.startedAt),
+    value: check.success ? 0 : 1,
+  }));
 
   return (
     <Box component="main" sx={{ pb: 6 }}>
@@ -66,12 +118,14 @@ export default function EndpointDetailsPage() {
               <ArrowBackIcon />
             </IconButton>
             <Box>
-              <Typography variant="h4">{endpoint.name}</Typography>
+              <Typography variant="h4">{endpoint?.name ?? "—"}</Typography>
               <Typography variant="body2" color="text.secondary">
-                {endpoint.method} {endpoint.url}
+                {endpoint?.method} {endpoint?.url}
               </Typography>
             </Box>
           </Stack>
+
+          {error && <Alert severity="error">{error}</Alert>}
 
           <Card>
             <CardContent>
@@ -84,9 +138,14 @@ export default function EndpointDetailsPage() {
                 <Stack spacing={1}>
                   <Typography variant="subtitle1">Текущий статус</Typography>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <StatusChip status={endpoint.status} />
+                    <StatusChip status={mapStatus(stats ?? undefined)} />
                     <Typography variant="body2" color="text.secondary">
-                      Последняя проверка {dayjs(metrics.lastCheck).format("HH:mm")}
+                      Последняя проверка{" "}
+                      {checks.length > 0
+                        ? dayjs(checks[checks.length - 1].finishedAt).format(
+                            "HH:mm",
+                          )
+                        : "—"}
                     </Typography>
                   </Stack>
                 </Stack>
@@ -95,20 +154,20 @@ export default function EndpointDetailsPage() {
                     <Typography variant="caption" color="text.secondary">
                       p95
                     </Typography>
-                    <Typography variant="h6">{formatMs(metrics.p95)}</Typography>
+                    <Typography variant="h6">{formatMs(stats?.p95)}</Typography>
                   </Stack>
                   <Stack>
                     <Typography variant="caption" color="text.secondary">
                       p99
                     </Typography>
-                    <Typography variant="h6">{formatMs(metrics.p99)}</Typography>
+                    <Typography variant="h6">{formatMs(stats?.p99)}</Typography>
                   </Stack>
                   <Stack>
                     <Typography variant="caption" color="text.secondary">
                       Error rate
                     </Typography>
                     <Typography variant="h6">
-                      {formatPercent(metrics.errorRate)}
+                      {formatPercent(stats?.errorRate)}
                     </Typography>
                   </Stack>
                 </Stack>
@@ -183,6 +242,12 @@ export default function EndpointDetailsPage() {
               </CardContent>
             </Card>
           </Stack>
+
+          {loading && (
+            <Typography variant="body2" color="text.secondary">
+              Загрузка данных...
+            </Typography>
+          )}
         </Stack>
       </Container>
     </Box>

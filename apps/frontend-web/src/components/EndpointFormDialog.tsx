@@ -15,26 +15,19 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { EndpointSummary } from "../app/lib/mockData";
+import type { EndpointRequest, EndpointResponse } from "../app/lib/apiTypes";
 
-export interface EndpointDraft {
-  name: string;
-  url: string;
-  method: string;
+export type EndpointDraft = Omit<EndpointRequest, "headers" | "tags"> & {
   headers: Record<string, string>;
-  timeoutMs: number;
-  expectedStatus: number[];
-  intervalSec: number;
-  enabled: boolean;
   tags: string[];
-}
+};
 
 interface EndpointFormDialogProps {
   open: boolean;
   availableTags: string[];
-  initial?: EndpointSummary | null;
+  initial?: EndpointResponse | null;
   onClose: () => void;
-  onSave: (draft: EndpointDraft) => void;
+  onSave: (draft: EndpointRequest) => void;
 }
 
 const defaultDraft: EndpointDraft = {
@@ -60,7 +53,10 @@ export default function EndpointFormDialog({
 }: EndpointFormDialogProps) {
   const [draft, setDraft] = React.useState<EndpointDraft>(defaultDraft);
   const [headers, setHeaders] = React.useState(
-    Object.entries(defaultDraft.headers).map(([key, value]) => ({ key, value })),
+    Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
+      key,
+      value,
+    })),
   );
   const [expectedStatusInput, setExpectedStatusInput] = React.useState(
     defaultDraft.expectedStatus.join(", "),
@@ -72,22 +68,28 @@ export default function EndpointFormDialog({
         name: initial.name,
         url: initial.url,
         method: initial.method,
-        headers: initial.headers,
+        headers: initial.headers ?? {},
         timeoutMs: initial.timeoutMs,
         expectedStatus: initial.expectedStatus,
         intervalSec: initial.intervalSec,
         enabled: initial.enabled,
-        tags: initial.tags,
+        tags: initial.tags ?? [],
       });
       setHeaders(
-        Object.entries(initial.headers).map(([key, value]) => ({ key, value })),
+        Object.entries(initial.headers ?? {}).map(([key, value]) => ({
+          key,
+          value,
+        })),
       );
       setExpectedStatusInput(initial.expectedStatus.join(", "));
       return;
     }
     setDraft(defaultDraft);
     setHeaders(
-      Object.entries(defaultDraft.headers).map(([key, value]) => ({ key, value })),
+      Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
+        key,
+        value,
+      })),
     );
     setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
   }, [initial, open]);
@@ -117,8 +119,9 @@ export default function EndpointFormDialog({
       .filter((value) => Number.isFinite(value));
     onSave({
       ...draft,
-      headers: headerMap,
+      headers: Object.keys(headerMap).length > 0 ? headerMap : null,
       expectedStatus,
+      tags: draft.tags.length > 0 ? draft.tags : null,
     });
   };
 
