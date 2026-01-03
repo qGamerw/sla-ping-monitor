@@ -8,11 +8,11 @@
 
 ```bash
 # Backend
-cd back
+cd apps/backend
 docker build -t sla-ping-monitor-backend:local .
 
 # Frontend
-cd ../front
+cd ../frontend-web
 docker build -t sla-ping-monitor-frontend:local .
 
 # Импорт в k3s (если используете containerd)

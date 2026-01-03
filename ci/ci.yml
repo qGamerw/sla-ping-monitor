@@ -23,7 +23,7 @@ jobs:
           gradle-version: "8.7"
 
       - name: Backend tests
-        run: gradle -p back test
+        run: gradle -p apps/backend test
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -31,16 +31,16 @@ jobs:
           node-version: "24"
 
       - name: Frontend build
-        working-directory: front
+        working-directory: apps/frontend-web
         run: |
           npm install --no-audit --no-fund
           npm run build
 
       - name: Build backend image
-        run: docker build -t back:dev ./back
+        run: docker build -t back:dev ./apps/backend
 
       - name: Build frontend image
-        run: docker build -t front:dev ./front
+        run: docker build -t front:dev ./apps/frontend-web
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4

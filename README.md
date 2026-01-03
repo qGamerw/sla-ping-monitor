@@ -11,7 +11,7 @@
 cd deploy/compose
 
 # Соберите локальный образ backend
-docker build -t sla-ping-monitor-backend:local ../../back
+docker build -t sla-ping-monitor-backend:local ../../apps/backend
 
 # Поднимите стек
 docker compose up -d
@@ -31,7 +31,7 @@ docker run --name sla-ping-monitor-db \
   -d postgres:14
 
 # Запуск backend (требуется установленный Gradle и JDK 21)
-cd back
+cd apps/backend
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/sla_ping_monitor \
 SPRING_DATASOURCE_USERNAME=postgres \
 SPRING_DATASOURCE_PASSWORD=postgres \
