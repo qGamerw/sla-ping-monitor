@@ -101,6 +101,7 @@ export default function HomePageClient() {
   );
   const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
   const [query, setQuery] = React.useState("");
   const [bulkCount, setBulkCount] = React.useState(1);
@@ -225,27 +226,25 @@ export default function HomePageClient() {
     setDialogOpen(true);
   };
 
-  const handleBulkCreate = async () => {
+  const handleBulkOpen = () => {
+    setBulkCount(1);
+    setBulkDialogOpen(true);
+  };
+
+  const handleBulkSave = async (draft: EndpointRequest) => {
     if (bulkCount <= 0) {
       setError("Количество для быстрого создания должно быть больше нуля.");
       return;
     }
     try {
-      const baseName = `Endpoint ${dayjs().format("HHmmss")}`;
       const requests = Array.from({ length: bulkCount }, (_, index) => ({
-        name: `${baseName} #${index + 1}`,
-        url: `http://localhost:4430/status/200?item=${index + 1}`,
-        method: "GET",
-        headers: { accept: "text/plain" },
-        timeoutMs: 3000,
-        expectedStatus: [200, 399],
-        intervalSec: 5,
-        enabled: true,
-        tags: ["bulk"],
+        ...draft,
+        name: bulkCount > 1 ? `${draft.name} #${index + 1}` : draft.name,
       }));
       for (const request of requests) {
         await createEndpoint(request);
       }
+      setBulkDialogOpen(false);
       await loadData();
     } catch (err) {
       setError("Не удалось создать endpoints.");
@@ -335,13 +334,21 @@ export default function HomePageClient() {
                 Управляйте мониторингом сервисов и смотрите ключевые метрики.
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreate}
-            >
-              Создать endpoint
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="outlined"
+                onClick={handleBulkOpen}
+              >
+                Быстро создать
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreate}
+              >
+                Создать endpoint
+              </Button>
+            </Stack>
           </Stack>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -409,34 +416,12 @@ export default function HomePageClient() {
                 alignItems={{ xs: "stretch", md: "center" }}
                 justifyContent="space-between"
               >
-                <Stack
-                  direction={{ xs: "column", md: "row" }}
-                  spacing={2}
-                  alignItems={{ xs: "stretch", md: "center" }}
-                >
-                  <TextField
-                    label="Поиск endpoint"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    size="small"
-                  />
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <TextField
-                      label="Быстро создать"
-                      type="number"
-                      value={bulkCount}
-                      onChange={(event) =>
-                        setBulkCount(Number(event.target.value))
-                      }
-                      size="small"
-                      inputProps={{ min: 1 }}
-                      sx={{ width: 140 }}
-                    />
-                    <Button variant="outlined" onClick={handleBulkCreate}>
-                      Создать
-                    </Button>
-                  </Stack>
-                </Stack>
+                <TextField
+                  label="Поиск endpoint"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  size="small"
+                />
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Chip
                     label={`${filteredEndpoints.length} endpoints`}
@@ -568,6 +553,15 @@ export default function HomePageClient() {
         initial={editing}
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
+      />
+      <EndpointFormDialog
+        open={bulkDialogOpen}
+        availableTags={availableTags}
+        initial={null}
+        count={bulkCount}
+        onCountChange={setBulkCount}
+        onClose={() => setBulkDialogOpen(false)}
+        onSave={handleBulkSave}
       />
     </Box>
   );

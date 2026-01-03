@@ -26,6 +26,8 @@ interface EndpointFormDialogProps {
   open: boolean;
   availableTags: string[];
   initial?: EndpointResponse | null;
+  count?: number;
+  onCountChange?: (value: number) => void;
   onClose: () => void;
   onSave: (draft: EndpointRequest) => void;
 }
@@ -50,6 +52,8 @@ export default function EndpointFormDialog({
   initial,
   onClose,
   onSave,
+  count,
+  onCountChange,
 }: EndpointFormDialogProps) {
   const [draft, setDraft] = React.useState<EndpointDraft>(defaultDraft);
   const [headers, setHeaders] = React.useState(
@@ -241,6 +245,16 @@ export default function EndpointFormDialog({
               <TextField {...params} label="Теги" placeholder="Добавить тег" />
             )}
           />
+          {onCountChange && (
+            <TextField
+              label="Количество"
+              type="number"
+              value={count ?? 1}
+              onChange={(event) => onCountChange(Number(event.target.value))}
+              inputProps={{ min: 1 }}
+              fullWidth
+            />
+          )}
           <Box>
             <FormControlLabel
               control={<Switch checked={draft.enabled} onChange={handleToggle} />}
