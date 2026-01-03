@@ -163,4 +163,4 @@ OpenAPI-описание находится в `contracts/openapi/api.yaml`.
 
 ## Локальный деплой в Kubernetes (kind)
 
-Инструкция: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+Инструкция: [`deploy/DEPLOYMENT.md`](deploy/DEPLOYMENT.md).

@@ -16,21 +16,21 @@ kind create cluster --name sla-ping-monitor
 ## Подготовка секретов
 
 ```bash
-cp k8s/dev/secrets/db.env.example k8s/dev/secrets/db.env
+cp deploy/k8s/dev/secrets/db.env.example deploy/k8s/dev/secrets/db.env
 ```
 
 ## Сборка образов и деплой
 
 ```bash
-make build
-make kind-load KIND_CLUSTER=sla-ping-monitor
-make deploy
+make -f deploy/Makefile build
+make -f deploy/Makefile kind-load KIND_CLUSTER=sla-ping-monitor
+make -f deploy/Makefile deploy
 ```
 
 ## Доступ к фронтенду
 
 ```bash
-make front
+make -f deploy/Makefile front
 ```
 
 Откройте: http://localhost:3000

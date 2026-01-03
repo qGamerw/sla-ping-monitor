@@ -48,4 +48,4 @@ jobs:
           version: "v1.30.0"
 
       - name: Validate kustomize
-        run: kubectl kustomize k8s/dev > /tmp/k8s-dev.yaml
+        run: kubectl kustomize deploy/k8s/dev > /tmp/k8s-dev.yaml
