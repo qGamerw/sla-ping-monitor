@@ -18,6 +18,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  Switch,
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -225,6 +226,29 @@ export default function EndpointDetailsClient() {
     }
   };
 
+  const handleToggle = async () => {
+    if (!endpoint) return;
+    try {
+      const payload: EndpointRequest = {
+        name: endpoint.name,
+        url: endpoint.url,
+        method: endpoint.method,
+        headers: endpoint.headers ?? null,
+        timeoutMs: endpoint.timeoutMs,
+        expectedStatus: endpoint.expectedStatus,
+        intervalSec: endpoint.intervalSec,
+        enabled: !endpoint.enabled,
+        tags: endpoint.tags ?? null,
+      };
+      await updateEndpoint(endpoint.id, payload);
+      setEndpoint((prev) =>
+        prev ? { ...prev, enabled: !prev.enabled } : prev,
+      );
+    } catch (err) {
+      setError("Не удалось обновить состояние endpoint.");
+    }
+  };
+
   if (!endpoint && !loading) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
@@ -292,6 +316,16 @@ export default function EndpointDetailsClient() {
                     <StatusChip
                       status={mapStatus(stats ?? undefined, endpoint?.enabled ?? true)}
                     />
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="body2" color="text.secondary">
+                        {endpoint?.enabled ? "Включен" : "Отключен"}
+                      </Typography>
+                      <Switch
+                        size="small"
+                        checked={endpoint?.enabled ?? false}
+                        onChange={handleToggle}
+                      />
+                    </Stack>
                     <Typography variant="body2" color="text.secondary">
                       Последняя проверка{" "}
                       {checks.length > 0
