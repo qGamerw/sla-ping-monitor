@@ -21,16 +21,20 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EditIcon from "@mui/icons-material/Edit";
 import { BarChart, LineChart } from "@mui/x-charts";
+import EndpointFormDialog from "../../../components/EndpointFormDialog";
 import StatusChip, { type Status } from "../../../components/StatusChip";
 import {
   fetchEndpoint,
   fetchEndpointChecks,
   fetchEndpointStats,
+  updateEndpoint,
 } from "../../lib/api";
 import type {
   CheckResultResponse,
   EndpointResponse,
+  EndpointRequest,
   MetricsWindow,
   StatsResponse,
 } from "../../lib/apiTypes";
@@ -119,6 +123,7 @@ export default function EndpointDetailsClient() {
   const [refreshSec, setRefreshSec] = React.useState<number | null>(
     initialRefresh,
   );
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   const [range, setRange] = React.useState<{
     from: dayjs.Dayjs;
     to: dayjs.Dayjs;
@@ -195,6 +200,31 @@ export default function EndpointDetailsClient() {
     router.replace(`/endpoints/${pathParams.id}?${query.toString()}`);
   };
 
+  const handleEdit = () => {
+    if (!endpoint) return;
+    setDialogOpen(true);
+  };
+
+  const handleSave = async (draft: EndpointRequest) => {
+    if (!endpoint) return;
+    try {
+      await updateEndpoint(endpoint.id, draft);
+      setEndpoint((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...draft,
+              tags: draft.tags ?? null,
+              headers: draft.headers ?? null,
+            }
+          : prev,
+      );
+      setDialogOpen(false);
+    } catch (err) {
+      setError("Не удалось сохранить endpoint. Проверьте данные формы.");
+    }
+  };
+
   if (!endpoint && !loading) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
@@ -236,6 +266,14 @@ export default function EndpointDetailsClient() {
                 {endpoint?.method} {endpoint?.url}
               </Typography>
             </Box>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={handleEdit}
+              sx={{ ml: "auto" }}
+            >
+              Редактировать
+            </Button>
           </Stack>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -388,6 +426,16 @@ export default function EndpointDetailsClient() {
           )}
         </Stack>
       </Container>
+
+      {endpoint && (
+        <EndpointFormDialog
+          open={dialogOpen}
+          availableTags={endpoint.tags ?? []}
+          initial={endpoint}
+          onClose={() => setDialogOpen(false)}
+          onSave={handleSave}
+        />
+      )}
     </Box>
   );
 }
