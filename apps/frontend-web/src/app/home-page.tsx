@@ -85,7 +85,13 @@ export default function HomePageClient() {
     windowOptions.includes(value as MetricsWindow)
       ? (value as MetricsWindow)
       : "15m";
+  const resolveRefresh = (value: string | null): number | null => {
+    if (!value) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
   const initialWindow = resolveWindow(searchParams.get("window"));
+  const initialRefresh = resolveRefresh(searchParams.get("refresh"));
   const [windowValue, setWindowValue] = React.useState<MetricsWindow>(
     initialWindow,
   );
@@ -95,7 +101,9 @@ export default function HomePageClient() {
   const [query, setQuery] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [refreshSec, setRefreshSec] = React.useState<number | null>(null);
+  const [refreshSec, setRefreshSec] = React.useState<number | null>(
+    initialRefresh,
+  );
 
   const availableTags = React.useMemo(
     () =>
@@ -164,12 +172,21 @@ export default function HomePageClient() {
 
   React.useEffect(() => {
     const paramWindow = resolveWindow(searchParams.get("window"));
+    const paramRefresh = resolveRefresh(searchParams.get("refresh"));
+    let shouldReload = true;
+
     if (paramWindow !== windowValue) {
       setWindowValue(paramWindow);
-      return;
+      shouldReload = false;
     }
-    void loadData();
-  }, [loadData, searchParams, windowValue]);
+    if (paramRefresh !== refreshSec) {
+      setRefreshSec(paramRefresh);
+      shouldReload = false;
+    }
+    if (shouldReload) {
+      void loadData();
+    }
+  }, [loadData, refreshSec, searchParams, windowValue]);
 
   React.useEffect(() => {
     if (!refreshSec) return;
@@ -183,6 +200,18 @@ export default function HomePageClient() {
     setWindowValue(value);
     const params = new URLSearchParams(searchParams.toString());
     params.set("window", value);
+    router.replace(`/?${params.toString()}`);
+  };
+
+  const handleRefreshChange = (value: string) => {
+    const nextValue = value === "" ? null : Number(value);
+    setRefreshSec(nextValue);
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextValue) {
+      params.set("refresh", String(nextValue));
+    } else {
+      params.delete("refresh");
+    }
     router.replace(`/?${params.toString()}`);
   };
 
@@ -206,9 +235,22 @@ export default function HomePageClient() {
     try {
       if (editing) {
         await updateEndpoint(editing.id, draft);
-      } else {
-        await createEndpoint(draft);
+        setEndpoints((prev) =>
+          prev.map((endpoint) =>
+            endpoint.id === editing.id
+              ? {
+                  ...endpoint,
+                  ...draft,
+                  tags: draft.tags ?? null,
+                  headers: draft.headers ?? null,
+                }
+              : endpoint,
+          ),
+        );
+        setDialogOpen(false);
+        return;
       }
+      await createEndpoint(draft);
       setDialogOpen(false);
       await loadData();
     } catch (err) {
@@ -311,10 +353,7 @@ export default function HomePageClient() {
                       labelId="refresh-select"
                       label="Refresh"
                       value={refreshSec ?? ""}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setRefreshSec(value === "" ? null : Number(value));
-                      }}
+                      onChange={(event) => handleRefreshChange(event.target.value)}
                     >
                       <MenuItem value="">Не обновлять</MenuItem>
                       <MenuItem value={15}>15 секунд</MenuItem>
@@ -421,7 +460,9 @@ export default function HomePageClient() {
                             <Tooltip title="Открыть">
                               <IconButton
                                 component={Link}
-                                href={`/endpoints/${endpoint.id}?window=${windowValue}`}
+                                href={`/endpoints/${endpoint.id}?window=${windowValue}${
+                                  refreshSec ? `&refresh=${refreshSec}` : ""
+                                }`}
                                 size="small"
                               >
                                 <OpenInNewIcon fontSize="small" />

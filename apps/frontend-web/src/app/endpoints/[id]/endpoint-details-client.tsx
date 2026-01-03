@@ -99,14 +99,22 @@ export default function EndpointDetailsClient() {
     windowOptions.includes(value as MetricsWindow)
       ? (value as MetricsWindow)
       : "1h";
+  const resolveRefresh = (value: string | null): number | null => {
+    if (!value) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
   const initialWindow = resolveWindow(searchParams.get("window"));
+  const initialRefresh = resolveRefresh(searchParams.get("refresh"));
   const [windowValue, setWindowValue] = React.useState<MetricsWindow>(
     initialWindow,
   );
   const [endpoint, setEndpoint] = React.useState<EndpointResponse | null>(null);
   const [stats, setStats] = React.useState<StatsResponse | null>(null);
   const [checks, setChecks] = React.useState<CheckResultResponse[]>([]);
-  const [refreshSec, setRefreshSec] = React.useState<number | null>(null);
+  const [refreshSec, setRefreshSec] = React.useState<number | null>(
+    initialRefresh,
+  );
   const [range, setRange] = React.useState<{
     from: dayjs.Dayjs;
     to: dayjs.Dayjs;
@@ -140,12 +148,21 @@ export default function EndpointDetailsClient() {
 
   React.useEffect(() => {
     const paramWindow = resolveWindow(searchParams.get("window"));
+    const paramRefresh = resolveRefresh(searchParams.get("refresh"));
+    let shouldReload = true;
+
     if (paramWindow !== windowValue) {
       setWindowValue(paramWindow);
-      return;
+      shouldReload = false;
     }
-    void loadData();
-  }, [loadData, searchParams, windowValue]);
+    if (paramRefresh !== refreshSec) {
+      setRefreshSec(paramRefresh);
+      shouldReload = false;
+    }
+    if (shouldReload) {
+      void loadData();
+    }
+  }, [loadData, refreshSec, searchParams, windowValue]);
 
   React.useEffect(() => {
     if (!refreshSec) return;
@@ -162,13 +179,27 @@ export default function EndpointDetailsClient() {
     router.replace(`/endpoints/${pathParams.id}?${query.toString()}`);
   };
 
+  const handleRefreshChange = (value: string) => {
+    const nextValue = value === "" ? null : Number(value);
+    setRefreshSec(nextValue);
+    const query = new URLSearchParams(searchParams.toString());
+    if (nextValue) {
+      query.set("refresh", String(nextValue));
+    } else {
+      query.delete("refresh");
+    }
+    router.replace(`/endpoints/${pathParams.id}?${query.toString()}`);
+  };
+
   if (!endpoint && !loading) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
         <Typography variant="h5">Endpoint не найден</Typography>
         <Button
           component={Link}
-          href={`/?window=${windowValue}`}
+          href={`/?window=${windowValue}${
+            refreshSec ? `&refresh=${refreshSec}` : ""
+          }`}
           sx={{ mt: 2 }}
           variant="outlined"
         >
@@ -187,7 +218,12 @@ export default function EndpointDetailsClient() {
       <Container maxWidth="lg" sx={{ pt: 4 }}>
         <Stack spacing={3}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <IconButton component={Link} href={`/?window=${windowValue}`}>
+            <IconButton
+              component={Link}
+              href={`/?window=${windowValue}${
+                refreshSec ? `&refresh=${refreshSec}` : ""
+              }`}
+            >
               <ArrowBackIcon />
             </IconButton>
             <Box>
@@ -268,10 +304,7 @@ export default function EndpointDetailsClient() {
                       labelId="refresh-select"
                       label="Refresh"
                       value={refreshSec ?? ""}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setRefreshSec(value === "" ? null : Number(value));
-                      }}
+                      onChange={(event) => handleRefreshChange(event.target.value)}
                     >
                       <MenuItem value="">Не обновлять</MenuItem>
                       <MenuItem value={15}>15 секунд</MenuItem>
