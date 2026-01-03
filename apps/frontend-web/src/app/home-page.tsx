@@ -86,7 +86,9 @@ export default function HomePageClient() {
       ? (value as MetricsWindow)
       : "15m";
   const initialWindow = resolveWindow(searchParams.get("window"));
-  const [window, setWindow] = React.useState<MetricsWindow>(initialWindow);
+  const [windowValue, setWindowValue] = React.useState<MetricsWindow>(
+    initialWindow,
+  );
   const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
@@ -111,7 +113,7 @@ export default function HomePageClient() {
     setLoading(true);
     setError(null);
     try {
-      const windowSec = windowToSeconds(window);
+      const windowSec = windowToSeconds(windowValue);
       const [endpointsResult, summaryResult] = await Promise.allSettled([
         fetchEndpoints(),
         fetchEndpointSummary(windowSec),
@@ -158,27 +160,27 @@ export default function HomePageClient() {
     } finally {
       setLoading(false);
     }
-  }, [window]);
+  }, [windowValue]);
 
   React.useEffect(() => {
     const paramWindow = resolveWindow(searchParams.get("window"));
-    if (paramWindow !== window) {
-      setWindow(paramWindow);
+    if (paramWindow !== windowValue) {
+      setWindowValue(paramWindow);
       return;
     }
     void loadData();
-  }, [loadData, searchParams, window]);
+  }, [loadData, searchParams, windowValue]);
 
   React.useEffect(() => {
     if (!refreshSec) return;
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       void loadData();
     }, refreshSec * 1000);
-    return () => window.clearInterval(intervalId);
+    return () => globalThis.clearInterval(intervalId);
   }, [loadData, refreshSec]);
 
   const handleWindowChange = (value: MetricsWindow) => {
-    setWindow(value);
+    setWindowValue(value);
     const params = new URLSearchParams(searchParams.toString());
     params.set("window", value);
     router.replace(`/?${params.toString()}`);
@@ -291,7 +293,7 @@ export default function HomePageClient() {
                     <Select
                       labelId="window-select"
                       label="Окно"
-                      value={window}
+                      value={windowValue}
                       onChange={(event) =>
                         handleWindowChange(event.target.value as MetricsWindow)
                       }
@@ -419,7 +421,7 @@ export default function HomePageClient() {
                             <Tooltip title="Открыть">
                               <IconButton
                                 component={Link}
-                                href={`/endpoints/${endpoint.id}?window=${window}`}
+                                href={`/endpoints/${endpoint.id}?window=${windowValue}`}
                                 size="small"
                               >
                                 <OpenInNewIcon fontSize="small" />

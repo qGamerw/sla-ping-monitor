@@ -100,7 +100,9 @@ export default function EndpointDetailsClient() {
       ? (value as MetricsWindow)
       : "1h";
   const initialWindow = resolveWindow(searchParams.get("window"));
-  const [window, setWindow] = React.useState<MetricsWindow>(initialWindow);
+  const [windowValue, setWindowValue] = React.useState<MetricsWindow>(
+    initialWindow,
+  );
   const [endpoint, setEndpoint] = React.useState<EndpointResponse | null>(null);
   const [stats, setStats] = React.useState<StatsResponse | null>(null);
   const [checks, setChecks] = React.useState<CheckResultResponse[]>([]);
@@ -117,7 +119,7 @@ export default function EndpointDetailsClient() {
     setLoading(true);
     setError(null);
     try {
-      const windowSec = windowToSeconds(window);
+      const windowSec = windowToSeconds(windowValue);
       const to = dayjs();
       const from = to.subtract(windowSec, "second");
       const [endpointData, statsData, checksData] = await Promise.all([
@@ -134,27 +136,27 @@ export default function EndpointDetailsClient() {
     } finally {
       setLoading(false);
     }
-  }, [pathParams.id, window]);
+  }, [pathParams.id, windowValue]);
 
   React.useEffect(() => {
     const paramWindow = resolveWindow(searchParams.get("window"));
-    if (paramWindow !== window) {
-      setWindow(paramWindow);
+    if (paramWindow !== windowValue) {
+      setWindowValue(paramWindow);
       return;
     }
     void loadData();
-  }, [loadData, searchParams, window]);
+  }, [loadData, searchParams, windowValue]);
 
   React.useEffect(() => {
     if (!refreshSec) return;
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       void loadData();
     }, refreshSec * 1000);
-    return () => window.clearInterval(intervalId);
+    return () => globalThis.clearInterval(intervalId);
   }, [loadData, refreshSec]);
 
   const handleWindowChange = (value: MetricsWindow) => {
-    setWindow(value);
+    setWindowValue(value);
     const query = new URLSearchParams(searchParams.toString());
     query.set("window", value);
     router.replace(`/endpoints/${pathParams.id}?${query.toString()}`);
@@ -166,7 +168,7 @@ export default function EndpointDetailsClient() {
         <Typography variant="h5">Endpoint не найден</Typography>
         <Button
           component={Link}
-          href={`/?window=${window}`}
+          href={`/?window=${windowValue}`}
           sx={{ mt: 2 }}
           variant="outlined"
         >
@@ -185,7 +187,7 @@ export default function EndpointDetailsClient() {
       <Container maxWidth="lg" sx={{ pt: 4 }}>
         <Stack spacing={3}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <IconButton component={Link} href={`/?window=${window}`}>
+            <IconButton component={Link} href={`/?window=${windowValue}`}>
               <ArrowBackIcon />
             </IconButton>
             <Box>
@@ -248,7 +250,7 @@ export default function EndpointDetailsClient() {
                     <Select
                       labelId="window-select"
                       label="Окно"
-                      value={window}
+                      value={windowValue}
                       onChange={(event) =>
                         handleWindowChange(event.target.value as MetricsWindow)
                       }
