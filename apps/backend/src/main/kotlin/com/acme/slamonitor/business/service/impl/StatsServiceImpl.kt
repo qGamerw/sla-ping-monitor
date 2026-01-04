@@ -50,8 +50,8 @@ open class StatsServiceImpl(
         val from = now.minusSeconds(windowSec)
         val statsByEndpoint = checkResultRepository.findByWindow(from, now).groupBy { it.endpoint.id }
 
-        return endpointRepository.findAll().map { endpoint ->
-            val lastCheck = checkResultRepository.findTopByEndpoint_IdOrderByFinishedAtDesc(endpoint.id)
+        return endpointRepository.findAllByIsDeletedFalse().map { endpoint ->
+            val lastCheck = checkResultRepository.findTopByEndpointIdOrderByFinishedAtDesc(endpoint.id)
             EndpointSummaryResponse(
                 id = endpoint.id,
                 name = endpoint.name,

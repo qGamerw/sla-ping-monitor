@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import dayjs from "dayjs";
 import {
   createEndpoint,
   deleteEndpoint,
@@ -42,10 +41,8 @@ export const useEndpointsList = () => {
   );
   const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [bulkDialogOpen, setBulkDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
   const [query, setQuery] = React.useState("");
-  const [bulkCount, setBulkCount] = React.useState(1);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -120,6 +117,10 @@ export const useEndpointsList = () => {
     }
   }, [windowValue]);
 
+  const handleRefreshNow = React.useCallback(() => {
+    void loadData();
+  }, [loadData]);
+
   React.useEffect(() => {
     const paramWindow = resolveWindow(searchParams.get("window"));
     const paramRefresh = resolveRefresh(searchParams.get("refresh"));
@@ -170,11 +171,6 @@ export const useEndpointsList = () => {
     setDialogOpen(true);
   };
 
-  const handleBulkOpen = () => {
-    setBulkCount(1);
-    setBulkDialogOpen(true);
-  };
-
   const handleEdit = (endpoint: EndpointResponse) => {
     if (endpoint.timeoutMs === 0 && endpoint.intervalSec === 0) {
       setError(
@@ -213,27 +209,6 @@ export const useEndpointsList = () => {
     }
   };
 
-  const handleBulkSave = async (draft: EndpointRequest) => {
-    if (bulkCount <= 0) {
-      setError("Количество для быстрого создания должно быть больше нуля.");
-      return;
-    }
-    try {
-      const baseName = draft.name?.trim() || `Endpoint ${dayjs().format("HHmmss")}`;
-      const requests = Array.from({ length: bulkCount }, (_, index) => ({
-        ...draft,
-        name: bulkCount > 1 ? `${baseName} #${index + 1}` : baseName,
-      }));
-      for (const request of requests) {
-        await createEndpoint(request);
-      }
-      setBulkDialogOpen(false);
-      await loadData();
-    } catch (err) {
-      setError("Не удалось создать endpoints.");
-    }
-  };
-
   const handleDelete = async (id: string) => {
     try {
       const confirmed = window.confirm("Удалить этот endpoint?");
@@ -263,6 +238,47 @@ export const useEndpointsList = () => {
       );
     } catch (err) {
       setError("Не удалось обновить состояние endpoint.");
+    }
+  };
+
+  const handleDuplicate = async (endpoint: EndpointResponse) => {
+    try {
+      if (endpoint.timeoutMs === 0 && endpoint.intervalSec === 0) {
+        setError("Недостаточно данных для копирования endpoint. Откройте его карточку.");
+        return;
+      }
+      await createEndpoint({
+        ...buildRequest(endpoint),
+        name: `${endpoint.name} (копия)`,
+      });
+      await loadData();
+    } catch (err) {
+      setError("Не удалось создать копию endpoint.");
+    }
+  };
+
+  const handleTagsChange = async (
+    endpoint: EndpointResponse,
+    nextTags: string[],
+  ) => {
+    try {
+      if (endpoint.timeoutMs === 0 && endpoint.intervalSec === 0) {
+        setError("Недостаточно данных для обновления endpoint. Откройте его карточку.");
+        return;
+      }
+      await updateEndpoint(endpoint.id, {
+        ...buildRequest(endpoint),
+        tags: nextTags.length > 0 ? nextTags : null,
+      });
+      setEndpoints((prev) =>
+        prev.map((item) =>
+          item.id === endpoint.id
+            ? { ...item, tags: nextTags.length > 0 ? nextTags : null }
+            : item,
+        ),
+      );
+    } catch (err) {
+      setError("Не удалось обновить теги endpoint.");
     }
   };
 
@@ -323,10 +339,8 @@ export const useEndpointsList = () => {
     filteredEndpoints,
     availableTags,
     dialogOpen,
-    bulkDialogOpen,
     editing,
     query,
-    bulkCount,
     selectedIds,
     selectedCount,
     allSelected,
@@ -334,21 +348,20 @@ export const useEndpointsList = () => {
     loading,
     error,
     setQuery,
-    setBulkCount,
     handleWindowChange,
     handleRefreshChange,
+    handleRefreshNow,
     handleCreate,
-    handleBulkOpen,
     handleEdit,
     handleSave,
-    handleBulkSave,
     handleDelete,
     handleToggle,
+    handleDuplicate,
+    handleTagsChange,
     handleSelectAll,
     handleSelectRow,
     handleBulkToggle,
     handleBulkDelete,
     setDialogOpen,
-    setBulkDialogOpen,
   };
 };

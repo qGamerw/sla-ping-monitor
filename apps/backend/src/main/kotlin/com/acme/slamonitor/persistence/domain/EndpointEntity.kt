@@ -10,11 +10,21 @@ import jakarta.persistence.Version
 import java.time.Instant
 import java.util.UUID
 import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.annotations.SQLDelete
 import org.hibernate.type.SqlTypes
 
 /**
  * JPA-сущность эндпоинта мониторинга.
  */
+@SQLDelete(
+    sql = """
+    UPDATE endpoints
+    SET is_deleted = true,
+        updated_at = now(),
+        version = version + 1
+    WHERE id = ? AND version = ?
+"""
+)
 @Entity
 @Table(name = "endpoints")
 class EndpointEntity(
@@ -63,7 +73,10 @@ class EndpointEntity(
 
     @Version
     @Column(name = "version", nullable = false)
-    var version: Long = 0
+    var version: Long = 0,
+
+    @Column(name = "is_deleted", nullable = false)
+    val isDeleted: Boolean = false
 ) {
 
     /**

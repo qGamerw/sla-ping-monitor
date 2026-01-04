@@ -11,9 +11,9 @@ data class SchedulerConfig(
     val workers: Int = 8,
 
     val refreshPeriod: Duration = Duration.ofSeconds(30),
-    val flushPeriod: Duration = Duration.ofMillis(250),
+    val flushPeriod: Duration = Duration.ofMillis(500),
+    val cleanDataPeriod: Duration = Duration.ofHours(1),
     val flushBatchSize: Int = 200,
 
-    val prefetchHorizon: Duration = Duration.ofMinutes(2),
     val metaPageSize: Int = 1000
 )

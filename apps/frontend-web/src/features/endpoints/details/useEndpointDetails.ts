@@ -75,6 +75,10 @@ export const useEndpointDetails = () => {
     }
   }, [pathParams.id, windowValue]);
 
+  const handleRefreshNow = React.useCallback(() => {
+    void loadData();
+  }, [loadData]);
+
   React.useEffect(() => {
     const paramWindow = resolveWindow(searchParams.get("window"));
     const paramRefresh = resolveRefresh(searchParams.get("refresh"));
@@ -184,6 +188,7 @@ export const useEndpointDetails = () => {
     setDialogOpen,
     handleWindowChange,
     handleRefreshChange,
+    handleRefreshNow,
     handleEdit,
     handleSave,
     handleToggle,

@@ -4,6 +4,7 @@ import com.acme.slamonitor.persistence.domain.CheckResultEntity
 import java.time.Instant
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
@@ -37,9 +38,9 @@ interface CheckResultRepository : JpaRepository<CheckResultEntity, UUID> {
         order by cr.startedAt asc
         """
     )
-    /**
-     * Возвращает проверки за период по всем эндпоинтам.
-     */
+            /**
+             * Возвращает проверки за период по всем эндпоинтам.
+             */
     fun findByWindow(
         @Param("from") from: Instant,
         @Param("to") to: Instant
@@ -48,6 +49,21 @@ interface CheckResultRepository : JpaRepository<CheckResultEntity, UUID> {
     /**
      * Возвращает последний результат проверки эндпоинта.
      */
-    fun findTopByEndpoint_IdOrderByFinishedAtDesc(id: UUID): CheckResultEntity?
+    fun findTopByEndpointIdOrderByFinishedAtDesc(id: UUID): CheckResultEntity?
 
+    @Modifying(clearAutomatically = true)
+    @Query(
+        value = """
+        DELETE FROM check_results
+        WHERE id IN (
+            SELECT id
+            FROM check_results
+            WHERE started_at < (now() - interval '1 day')
+            ORDER BY started_at
+            LIMIT 100
+        )
+        """,
+        nativeQuery = true
+    )
+    fun deleteExpiredBatch(): Int
 }

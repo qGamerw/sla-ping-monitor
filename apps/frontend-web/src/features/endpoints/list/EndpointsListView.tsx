@@ -15,10 +15,8 @@ export default function EndpointsListView() {
     filteredEndpoints,
     availableTags,
     dialogOpen,
-    bulkDialogOpen,
     editing,
     query,
-    bulkCount,
     selectedIds,
     selectedCount,
     allSelected,
@@ -26,28 +24,27 @@ export default function EndpointsListView() {
     loading,
     error,
     setQuery,
-    setBulkCount,
     handleWindowChange,
     handleRefreshChange,
+    handleRefreshNow,
     handleCreate,
-    handleBulkOpen,
     handleEdit,
     handleSave,
-    handleBulkSave,
     handleDelete,
     handleToggle,
+    handleDuplicate,
+    handleTagsChange,
     handleSelectAll,
     handleSelectRow,
     handleBulkToggle,
     handleBulkDelete,
     setDialogOpen,
-    setBulkDialogOpen,
   } = useEndpointsList();
 
   return (
     <Container maxWidth="lg" sx={{ pt: 4 }}>
       <Stack spacing={3}>
-        <EndpointsHeader onCreate={handleCreate} onBulkCreate={handleBulkOpen} />
+        <EndpointsHeader onCreate={handleCreate} />
 
         {error && <Alert severity="error">{error}</Alert>}
 
@@ -56,6 +53,7 @@ export default function EndpointsListView() {
           refreshSec={refreshSec}
           onWindowChange={handleWindowChange}
           onRefreshChange={handleRefreshChange}
+          onRefreshNow={handleRefreshNow}
         />
 
         <Card>
@@ -81,6 +79,8 @@ export default function EndpointsListView() {
               onSelectAll={handleSelectAll}
               onSelectRow={handleSelectRow}
               onToggle={handleToggle}
+              onDuplicate={handleDuplicate}
+              onTagsChange={handleTagsChange}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
@@ -99,16 +99,6 @@ export default function EndpointsListView() {
         initial={editing}
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
-      />
-      <EndpointFormDialog
-        open={bulkDialogOpen}
-        availableTags={availableTags}
-        initial={null}
-        hideNameField
-        count={bulkCount}
-        onCountChange={setBulkCount}
-        onClose={() => setBulkDialogOpen(false)}
-        onSave={handleBulkSave}
       />
     </Container>
   );

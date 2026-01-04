@@ -6,6 +6,7 @@ import com.acme.slamonitor.business.scheduler.dto.EndpointRef
 import com.acme.slamonitor.business.scheduler.dto.EndpointResult
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
 import com.acme.slamonitor.business.scheduler.dto.LocalState
+import com.acme.slamonitor.persistence.CheckResultRepository
 import com.acme.slamonitor.persistence.EndpointRepository
 import com.acme.slamonitor.persistence.domain.EndpointEntity
 import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
@@ -38,7 +39,8 @@ import org.springframework.jdbc.core.JdbcTemplate
  * Планировщик проверок в памяти с очередью, воркерами и flush в БД.
  */
 open class InMemoryScheduler(
-    private val repository: EndpointRepository,
+    private val endpointRepository: EndpointRepository,
+    private val checkResultRepository: CheckResultRepository,
     private val jdbcTemplate: JdbcTemplate,
     private val processor: EndpointProcessor,
     private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher
@@ -59,12 +61,14 @@ open class InMemoryScheduler(
         refreshLoopDispatcher: CoroutineDispatcher,
         feedLoopDispatcher: CoroutineDispatcher,
         workerDispatcher: CoroutineDispatcher,
-        flusherLoopDispatcher: CoroutineDispatcher
+        flusherLoopDispatcher: CoroutineDispatcher,
+        cleanDataLoopDispatcher: CoroutineDispatcher,
     ) = coroutineScope {
         launch(refreshLoopDispatcher) { refreshLoop() }
         launch(feedLoopDispatcher) { feedLoop() }
         repeat(CONFIG.workers) { launch(workerDispatcher) { workerLoop() } }
         launch(flusherLoopDispatcher) { flusherLoop() }
+        launch(cleanDataLoopDispatcher) { cleanDatabase() }
     }
 
     /**
@@ -79,7 +83,7 @@ open class InMemoryScheduler(
 
             while (true) {
                 val endpointMetas = jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting all endpoints") {
-                    repository.findAllMeta(PageRequest.of(page, CONFIG.metaPageSize))
+                    endpointRepository.findAllMeta(PageRequest.of(page, CONFIG.metaPageSize))
                 }
                 if (endpointMetas.isEmpty()) break
 
@@ -101,7 +105,7 @@ open class InMemoryScheduler(
             if (changedEndpoints.isNotEmpty()) {
                 val entities =
                     jpaAsyncIoWorker.executeWithTransactionalSupplier("Getting endpoint: $changedEndpoints") {
-                        repository.findAllById(changedEndpoints)
+                        endpointRepository.findByIdInAndIsDeletedFalse(changedEndpoints)
                     }
 
                 for (changeEntity in entities) {
@@ -262,7 +266,7 @@ open class InMemoryScheduler(
     /**
      * Сохраняет батч результатов в БД.
      */
-    private suspend fun flushBatch(batch: List<EndpointResult>) {
+    private fun flushBatch(batch: List<EndpointResult>) {
         jdbcTemplate.batchUpdate(SQL_QUEUE, object : BatchPreparedStatementSetter {
             /**
              * Размер батча для вставки.
@@ -315,6 +319,20 @@ open class InMemoryScheduler(
                 }
             }
         })
+    }
+
+    /**
+     * Удаление устаревших записей из бд
+     */
+    private suspend fun cleanDatabase() {
+        while (currentCoroutineContext().isActive) {
+            jpaAsyncIoWorker.executeWithTransactionalConsumer("Period clean data from database") {
+                endpointRepository.deleteExpiredBatch()
+                checkResultRepository.deleteExpiredBatch()
+            }
+
+            delay(CONFIG.cleanDataPeriod.toMillis())
+        }
     }
 
     /**

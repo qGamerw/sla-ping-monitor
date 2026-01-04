@@ -2,10 +2,11 @@ package com.acme.slamonitor.configuration
 
 import com.acme.slamonitor.api.BackendNodeController
 import com.acme.slamonitor.api.EndpointController
-import com.acme.slamonitor.api.GlobalExceptionHandler
+import com.acme.slamonitor.api.FolderController
 import com.acme.slamonitor.api.StatsController
 import com.acme.slamonitor.api.dto.request.EndpointRequest
 import com.acme.slamonitor.api.filter.HttpLoggingFilter
+import com.acme.slamonitor.api.handler.GlobalExceptionHandler
 import com.acme.slamonitor.api.validate.BaseValidationPipeline
 import com.acme.slamonitor.api.validate.ValidationPipeline
 import com.acme.slamonitor.api.validate.impl.EndpointIntervalValidator
@@ -16,17 +17,20 @@ import com.acme.slamonitor.business.client.EndpointClient
 import com.acme.slamonitor.business.client.impl.KtorEndpointClient
 import com.acme.slamonitor.business.scheduler.EndpointProcessor
 import com.acme.slamonitor.business.scheduler.InMemoryScheduler
-import com.acme.slamonitor.business.scheduler.SchedulerLifecycle
+import com.acme.slamonitor.business.scheduler.SchedulerSmartLifecycle
 import com.acme.slamonitor.business.scheduler.impl.EndpointProcessorImpl
 import com.acme.slamonitor.business.service.BackendNodeService
 import com.acme.slamonitor.business.service.EndpointService
+import com.acme.slamonitor.business.service.FolderService
 import com.acme.slamonitor.business.service.StatsService
 import com.acme.slamonitor.business.service.impl.BackendNodeServiceImpl
 import com.acme.slamonitor.business.service.impl.EndpointServiceImpl
+import com.acme.slamonitor.business.service.impl.FolderServiceImpl
 import com.acme.slamonitor.business.service.impl.StatsServiceImpl
 import com.acme.slamonitor.persistence.BackendNodeRepository
 import com.acme.slamonitor.persistence.CheckResultRepository
 import com.acme.slamonitor.persistence.EndpointRepository
+import com.acme.slamonitor.persistence.FolderRepository
 import com.acme.slamonitor.persistence.util.JpaIoTransactionalLogging
 import com.acme.slamonitor.post_processor.EndpointClientLoggingBeanPostProcessor
 import com.acme.slamonitor.scope.AppScope
@@ -59,6 +63,7 @@ val controllerBeans = beans {
     bean(::EndpointController)
     bean(::StatsController)
     bean(::BackendNodeController)
+    bean(::FolderController)
 
     bean<FilterRegistrationBean<HttpLoggingFilter>> {
         FilterRegistrationBean(HttpLoggingFilter()).apply {
@@ -142,21 +147,30 @@ val serviceBeans = beans {
         )
     }
 
+    bean<FolderService> {
+        FolderServiceImpl(
+            folderRepository = ref<FolderRepository>(),
+            jpaAsyncIoWorker = ref<JpaIoWorkerCoroutineDispatcher>()
+        )
+    }
+
     bean<SmartLifecycle> {
-        SchedulerLifecycle(
+        SchedulerSmartLifecycle(
             scheduler = ref(),
             rootDispatcher = ref<CoroutineDispatcher>(ROOT_THREAD_DISPATCHER_BEAN_NAME),
             refreshLoopDispatcher = ref<CoroutineDispatcher>(REFRESH_LOOP_THREAD_DISPATCHER_BEAN_NAME),
             feedLoopDispatcher = ref<CoroutineDispatcher>(FEED_LOOP_THREAD_DISPATCHER_BEAN_NAME),
             workerDispatcher = ref<CoroutineDispatcher>(WORKER_THREAD_DISPATCHER_BEAN_NAME),
             flusherLoopDispatcher = ref<CoroutineDispatcher>(FLUSHER_LOOP_THREAD_DISPATCHER_BEAN_NAME),
+            cleanDataLoopDispatcher = ref<CoroutineDispatcher>(CLEAN_DATA_LOOP_THREAD_DISPATCHER_BEAN_NAME),
             appScope = ref()
         )
     }
 
     bean<InMemoryScheduler> {
         InMemoryScheduler(
-            repository = ref<EndpointRepository>(),
+            endpointRepository = ref<EndpointRepository>(),
+            checkResultRepository = ref<CheckResultRepository>(),
             jdbcTemplate = ref<JdbcTemplate>(),
             processor = ref<EndpointProcessor>(),
             jpaAsyncIoWorker = ref<JpaIoWorkerCoroutineDispatcher>()
@@ -220,6 +234,11 @@ val dispatchersBeans = beans {
     ) { virtualPerTaskExecutor("sched-flusher-") }
 
     bean<ExecutorService>(
+        name = CLEAN_DATA_LOOP_THREAD_EXECUTOR_BEAN_NAME,
+        destroyMethodName = "shutdown"
+    ) { virtualPerTaskExecutor("sched-clean-data-") }
+
+    bean<ExecutorService>(
         name = WORKER_THREAD_EXECUTOR_BEAN_NAME,
         destroyMethodName = "shutdown"
     ) { virtualPerTaskExecutor("sched-worker-") }
@@ -255,6 +274,11 @@ val dispatchersBeans = beans {
     ) { ref<ExecutorService>(FLUSHER_LOOP_THREAD_EXECUTOR_BEAN_NAME).asCoroutineDispatcher() }
 
     bean<ExecutorCoroutineDispatcher>(
+        name = CLEAN_DATA_LOOP_THREAD_DISPATCHER_BEAN_NAME,
+        destroyMethodName = "close"
+    ) { ref<ExecutorService>(CLEAN_DATA_LOOP_THREAD_EXECUTOR_BEAN_NAME).asCoroutineDispatcher() }
+
+    bean<ExecutorCoroutineDispatcher>(
         name = WORKER_THREAD_DISPATCHER_BEAN_NAME,
         destroyMethodName = "close"
     ) { ref<ExecutorService>(WORKER_THREAD_EXECUTOR_BEAN_NAME).asCoroutineDispatcher() }
@@ -283,6 +307,7 @@ private const val DB_THREAD_EXECUTOR_BEAN_NAME = "dbThreadExecutor"
 private const val REFRESH_LOOP_THREAD_EXECUTOR_BEAN_NAME = "refreshLoopThreadExecutor"
 private const val FEED_LOOP_EXECUTOR_BEAN_NAME = "feedLoopThreadExecutor"
 private const val FLUSHER_LOOP_THREAD_EXECUTOR_BEAN_NAME = "flusherLoopThreadExecutor"
+private const val CLEAN_DATA_LOOP_THREAD_EXECUTOR_BEAN_NAME = "cleanDataLoopThreadExecutor"
 private const val WORKER_THREAD_EXECUTOR_BEAN_NAME = "workerThreadExecutor"
 private const val HTTP_THREAD_EXECUTOR_BEAN_NAME = "httpThreadExecutor"
 
@@ -291,5 +316,6 @@ const val DB_THREAD_DISPATCHER_BEAN_NAME = "dbThreadDispatcher"
 const val REFRESH_LOOP_THREAD_DISPATCHER_BEAN_NAME = "refreshLoopThreadDispatcher"
 const val FEED_LOOP_THREAD_DISPATCHER_BEAN_NAME = "feedLoopThreadDispatcher"
 const val FLUSHER_LOOP_THREAD_DISPATCHER_BEAN_NAME = "flusherLoopThreadDispatcher"
+const val CLEAN_DATA_LOOP_THREAD_DISPATCHER_BEAN_NAME = "cleanDataLoopThreadDispatcher"
 const val WORKER_THREAD_DISPATCHER_BEAN_NAME = "workerThreadDispatcher"
 const val HTTP_THREAD_DISPATCHER_BEAN_NAME = "httpThreadDispatcher"
