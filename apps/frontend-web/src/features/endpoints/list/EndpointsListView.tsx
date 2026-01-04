@@ -32,6 +32,7 @@ export default function EndpointsListView() {
     handleSave,
     handleDelete,
     handleToggle,
+    handleDuplicate,
     handleTagsChange,
     handleSelectAll,
     handleSelectRow,
@@ -78,6 +79,7 @@ export default function EndpointsListView() {
               onSelectAll={handleSelectAll}
               onSelectRow={handleSelectRow}
               onToggle={handleToggle}
+              onDuplicate={handleDuplicate}
               onTagsChange={handleTagsChange}
               onEdit={handleEdit}
               onDelete={handleDelete}

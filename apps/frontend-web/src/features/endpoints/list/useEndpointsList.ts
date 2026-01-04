@@ -241,6 +241,22 @@ export const useEndpointsList = () => {
     }
   };
 
+  const handleDuplicate = async (endpoint: EndpointResponse) => {
+    try {
+      if (endpoint.timeoutMs === 0 && endpoint.intervalSec === 0) {
+        setError("Недостаточно данных для копирования endpoint. Откройте его карточку.");
+        return;
+      }
+      await createEndpoint({
+        ...buildRequest(endpoint),
+        name: `${endpoint.name} (копия)`,
+      });
+      await loadData();
+    } catch (err) {
+      setError("Не удалось создать копию endpoint.");
+    }
+  };
+
   const handleTagsChange = async (
     endpoint: EndpointResponse,
     nextTags: string[],
@@ -340,6 +356,7 @@ export const useEndpointsList = () => {
     handleSave,
     handleDelete,
     handleToggle,
+    handleDuplicate,
     handleTagsChange,
     handleSelectAll,
     handleSelectRow,
