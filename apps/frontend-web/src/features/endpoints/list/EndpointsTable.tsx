@@ -1,3 +1,4 @@
+import * as React from "react";
 import dayjs from "dayjs";
 import Link from "next/link";
 import {
@@ -11,9 +12,11 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -32,6 +35,7 @@ interface EndpointsTableProps {
   onSelectAll: (checked: boolean) => void;
   onSelectRow: (id: string) => void;
   onToggle: (endpoint: EndpointResponse) => void;
+  onTagsChange: (endpoint: EndpointResponse, nextTags: string[]) => void;
   onEdit: (endpoint: EndpointResponse) => void;
   onDelete: (id: string) => void;
 }
@@ -46,9 +50,35 @@ export default function EndpointsTable({
   onSelectAll,
   onSelectRow,
   onToggle,
+  onTagsChange,
   onEdit,
   onDelete,
 }: EndpointsTableProps) {
+  const [tagInputs, setTagInputs] = React.useState<Record<string, string>>({});
+
+  const handleTagInputChange = (id: string, value: string) => {
+    setTagInputs((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleAddTag = (endpoint: EndpointResponse) => {
+    const rawValue = tagInputs[endpoint.id] ?? "";
+    const value = rawValue.trim();
+    if (!value) return;
+    const existing = endpoint.tags ?? [];
+    if (existing.includes(value)) {
+      setTagInputs((prev) => ({ ...prev, [endpoint.id]: "" }));
+      return;
+    }
+    const nextTags = [...existing, value];
+    onTagsChange(endpoint, nextTags);
+    setTagInputs((prev) => ({ ...prev, [endpoint.id]: "" }));
+  };
+
+  const handleRemoveTag = (endpoint: EndpointResponse, tag: string) => {
+    const nextTags = (endpoint.tags ?? []).filter((item) => item !== tag);
+    onTagsChange(endpoint, nextTags);
+  };
+
   return (
     <Table size="small">
       <TableHead>
@@ -85,21 +115,59 @@ export default function EndpointsTable({
               <TableCell>
                 <Stack spacing={0.5}>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="subtitle2">{endpoint.name}</Typography>
+                    <Typography
+                      variant="subtitle2"
+                      component={Link}
+                      href={`/endpoints/${endpoint.id}`}
+                      color="primary"
+                      sx={{ textDecoration: "none" }}
+                    >
+                      {endpoint.name}
+                    </Typography>
                     {!endpoint.enabled && <Chip label="Paused" size="small" />}
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
                     {endpoint.method} {endpoint.url}
                   </Typography>
-                  <Stack direction="row" spacing={1}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
                     {(endpoint.tags ?? []).map((tag) => (
                       <Chip
                         key={tag}
                         label={tag}
                         size="small"
                         variant="outlined"
+                        onDelete={() => handleRemoveTag(endpoint, tag)}
                       />
                     ))}
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      alignItems="center"
+                      sx={{ minWidth: 200 }}
+                    >
+                      <TextField
+                        size="small"
+                        placeholder="Добавить тег"
+                        value={tagInputs[endpoint.id] ?? ""}
+                        onChange={(event) =>
+                          handleTagInputChange(endpoint.id, event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            handleAddTag(endpoint);
+                          }
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        aria-label="Добавить тег"
+                        onClick={() => handleAddTag(endpoint)}
+                      >
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
                   </Stack>
                 </Stack>
               </TableCell>

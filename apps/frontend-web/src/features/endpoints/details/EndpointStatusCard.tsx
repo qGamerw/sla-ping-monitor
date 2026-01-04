@@ -4,12 +4,14 @@ import {
   CardContent,
   FormControl,
   InputLabel,
+  IconButton,
   MenuItem,
   Select,
   Stack,
   Switch,
   Typography,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import StatusChip from "../components/StatusChip";
 import type { MetricsWindow, StatsResponse } from "../../../shared/api/types";
 import { windowOptions } from "../../../shared/api/windows";
@@ -23,6 +25,7 @@ interface EndpointStatusCardProps {
   refreshSec: number | null;
   onWindowChange: (value: MetricsWindow) => void;
   onRefreshChange: (value: string) => void;
+  onRefreshNow: () => void;
   onToggle: () => void;
 }
 
@@ -34,6 +37,7 @@ export default function EndpointStatusCard({
   refreshSec,
   onWindowChange,
   onRefreshChange,
+  onRefreshNow,
   onToggle,
 }: EndpointStatusCardProps) {
   return (
@@ -122,6 +126,14 @@ export default function EndpointStatusCard({
                 <MenuItem value={300}>5 минут</MenuItem>
               </Select>
             </FormControl>
+            <IconButton
+              aria-label="Обновить данные"
+              size="small"
+              color="primary"
+              onClick={onRefreshNow}
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
           </Stack>
         </Stack>
       </CardContent>

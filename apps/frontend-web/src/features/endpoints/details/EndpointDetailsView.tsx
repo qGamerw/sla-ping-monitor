@@ -23,6 +23,7 @@ export default function EndpointDetailsView() {
     setDialogOpen,
     handleWindowChange,
     handleRefreshChange,
+    handleRefreshNow,
     handleEdit,
     handleSave,
     handleToggle,
@@ -64,6 +65,7 @@ export default function EndpointDetailsView() {
             refreshSec={refreshSec}
             onWindowChange={handleWindowChange}
             onRefreshChange={handleRefreshChange}
+            onRefreshNow={handleRefreshNow}
             onToggle={handleToggle}
           />
         )}

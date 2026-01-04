@@ -3,13 +3,9 @@ import AddIcon from "@mui/icons-material/Add";
 
 interface EndpointsHeaderProps {
   onCreate: () => void;
-  onBulkCreate: () => void;
 }
 
-export default function EndpointsHeader({
-  onCreate,
-  onBulkCreate,
-}: EndpointsHeaderProps) {
+export default function EndpointsHeader({ onCreate }: EndpointsHeaderProps) {
   return (
     <Stack
       direction={{ xs: "column", md: "row" }}
@@ -25,14 +21,9 @@ export default function EndpointsHeader({
           Управляйте мониторингом сервисов и смотрите ключевые метрики.
         </Typography>
       </Box>
-      <Stack direction="row" spacing={2}>
-        <Button variant="outlined" onClick={onBulkCreate}>
-          Быстро создать
-        </Button>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={onCreate}>
-          Создать endpoint
-        </Button>
-      </Stack>
+      <Button variant="contained" startIcon={<AddIcon />} onClick={onCreate}>
+        Создать endpoint
+      </Button>
     </Stack>
   );
 }

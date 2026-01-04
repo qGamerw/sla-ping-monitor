@@ -3,11 +3,13 @@ import {
   CardContent,
   FormControl,
   InputLabel,
+  IconButton,
   MenuItem,
   Select,
   Stack,
   Typography,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import type { MetricsWindow } from "../../../shared/api/types";
 import { windowOptions } from "../../../shared/api/windows";
 
@@ -16,6 +18,7 @@ interface EndpointsMetricsCardProps {
   refreshSec: number | null;
   onWindowChange: (value: MetricsWindow) => void;
   onRefreshChange: (value: string) => void;
+  onRefreshNow: () => void;
 }
 
 export default function EndpointsMetricsCard({
@@ -23,6 +26,7 @@ export default function EndpointsMetricsCard({
   refreshSec,
   onWindowChange,
   onRefreshChange,
+  onRefreshNow,
 }: EndpointsMetricsCardProps) {
   return (
     <Card>
@@ -75,6 +79,14 @@ export default function EndpointsMetricsCard({
                 <MenuItem value={300}>5 минут</MenuItem>
               </Select>
             </FormControl>
+            <IconButton
+              aria-label="Обновить данные"
+              size="small"
+              color="primary"
+              onClick={onRefreshNow}
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
           </Stack>
         </Stack>
       </CardContent>
