@@ -9,9 +9,16 @@ import {
   fetchEndpointSummary,
   updateEndpoint,
 } from "../../../shared/api/endpoints";
+import {
+  createFolder,
+  deleteFolder,
+  fetchFolders,
+  updateFolder,
+} from "../../../shared/api/folders";
 import type {
   EndpointRequest,
   EndpointResponse,
+  FolderResponse,
   MetricsWindow,
 } from "../../../shared/api/types";
 import { windowOptions, windowToSeconds } from "../../../shared/api/windows";
@@ -40,6 +47,12 @@ export const useEndpointsList = () => {
     initialRefresh,
   );
   const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
+  const [folders, setFolders] = React.useState<FolderResponse[]>([]);
+  const [selectedFolder, setSelectedFolder] = React.useState("all");
+  const [folderDialogOpen, setFolderDialogOpen] = React.useState(false);
+  const [editingFolder, setEditingFolder] = React.useState<FolderResponse | null>(
+    null,
+  );
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EndpointResponse | null>(null);
   const [query, setQuery] = React.useState("");
@@ -55,9 +68,18 @@ export const useEndpointsList = () => {
     [endpoints],
   );
 
-  const filteredEndpoints = endpoints.filter((endpoint) =>
-    endpoint.name.toLowerCase().includes(query.toLowerCase()),
+  const activeFolder = React.useMemo(
+    () => folders.find((folder) => folder.name === selectedFolder) ?? null,
+    [folders, selectedFolder],
   );
+
+  const filteredEndpoints = endpoints.filter((endpoint) => {
+    if (!endpoint.name.toLowerCase().includes(query.toLowerCase())) {
+      return false;
+    }
+    if (selectedFolder === "all") return true;
+    return activeFolder?.endpoints.includes(endpoint.id) ?? false;
+  });
   const selectedCount = selectedIds.length;
   const allSelected =
     filteredEndpoints.length > 0 && selectedIds.length === filteredEndpoints.length;
@@ -66,13 +88,16 @@ export const useEndpointsList = () => {
 
   const loadData = React.useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const windowSec = windowToSeconds(windowValue);
-      const [endpointsResult, summaryResult] = await Promise.allSettled([
+      const [endpointsResult, summaryResult, foldersResult] =
+        await Promise.allSettled([
         fetchEndpoints(),
         fetchEndpointSummary(windowSec),
+        fetchFolders(),
       ]);
+
+      const errorMessages: string[] = [];
 
       const summaryList =
         summaryResult.status === "fulfilled" ? summaryResult.value : [];
@@ -88,7 +113,7 @@ export const useEndpointsList = () => {
           })),
         );
         if (summaryResult.status === "rejected") {
-          setError("Не удалось загрузить сводные метрики.");
+          errorMessages.push("Не удалось загрузить сводные метрики.");
         }
       } else if (summaryList.length > 0) {
         setEndpoints(
@@ -108,10 +133,22 @@ export const useEndpointsList = () => {
             summary,
           })),
         );
-        setError("Не удалось загрузить конфигурации endpoint, показаны сводки.");
+        errorMessages.push(
+          "Не удалось загрузить конфигурации endpoint, показаны сводки.",
+        );
       } else {
-        setError("Не удалось загрузить данные. Проверьте соединение с API.");
+        errorMessages.push(
+          "Не удалось загрузить данные. Проверьте соединение с API.",
+        );
       }
+
+      if (foldersResult.status === "fulfilled") {
+        setFolders(foldersResult.value);
+      } else {
+        errorMessages.push("Не удалось загрузить список папок.");
+      }
+
+      setError(errorMessages.length > 0 ? errorMessages.join(" ") : null);
     } finally {
       setLoading(false);
     }
@@ -146,6 +183,13 @@ export const useEndpointsList = () => {
     }, refreshSec * 1000);
     return () => globalThis.clearInterval(intervalId);
   }, [loadData, refreshSec]);
+
+  React.useEffect(() => {
+    if (selectedFolder === "all") return;
+    if (!folders.some((folder) => folder.name === selectedFolder)) {
+      setSelectedFolder("all");
+    }
+  }, [folders, selectedFolder]);
 
   const handleWindowChange = (value: MetricsWindow) => {
     setWindowValue(value);
@@ -282,6 +326,66 @@ export const useEndpointsList = () => {
     }
   };
 
+  const handleFolderSelect = (value: string) => {
+    setSelectedFolder(value);
+    setSelectedIds([]);
+  };
+
+  const handleFolderCreate = () => {
+    setEditingFolder(null);
+    setFolderDialogOpen(true);
+  };
+
+  const handleFolderEdit = () => {
+    const target = folders.find((folder) => folder.name === selectedFolder);
+    if (!target) return;
+    setEditingFolder(target);
+    setFolderDialogOpen(true);
+  };
+
+  const handleFolderSave = async (draft: { name: string; endpoints: string[] }) => {
+    try {
+      if (editingFolder) {
+        await updateFolder({
+          name: editingFolder.name,
+          endpoints: draft.endpoints,
+          newName: draft.name,
+        });
+      } else {
+        await createFolder({ name: draft.name });
+        if (draft.endpoints.length > 0) {
+          await updateFolder({
+            name: draft.name,
+            endpoints: draft.endpoints,
+            newName: draft.name,
+          });
+        }
+      }
+      setFolderDialogOpen(false);
+      setEditingFolder(null);
+      setSelectedFolder(draft.name);
+      await loadData();
+    } catch (err) {
+      setError("Не удалось сохранить папку.");
+    }
+  };
+
+  const handleFolderDelete = async () => {
+    const target = editingFolder?.name ?? selectedFolder;
+    if (!target || target === "all") return;
+    const confirmed = window.confirm("Удалить эту папку?");
+    if (!confirmed) return;
+    try {
+      await deleteFolder({ name: target });
+      setFolderDialogOpen(false);
+      setEditingFolder(null);
+      setSelectedFolder("all");
+      await loadData();
+    } catch (err) {
+      setError("Не удалось удалить папку.");
+    }
+  };
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedIds(filteredEndpoints.map((endpoint) => endpoint.id));
@@ -336,6 +440,11 @@ export const useEndpointsList = () => {
     windowValue,
     refreshSec,
     endpoints,
+    folders,
+    selectedFolder,
+    folderDialogOpen,
+    editingFolder,
+    activeFolder,
     filteredEndpoints,
     availableTags,
     dialogOpen,
@@ -358,10 +467,16 @@ export const useEndpointsList = () => {
     handleToggle,
     handleDuplicate,
     handleTagsChange,
+    handleFolderSelect,
+    handleFolderCreate,
+    handleFolderEdit,
+    handleFolderSave,
+    handleFolderDelete,
     handleSelectAll,
     handleSelectRow,
     handleBulkToggle,
     handleBulkDelete,
     setDialogOpen,
+    setFolderDialogOpen,
   };
 };
