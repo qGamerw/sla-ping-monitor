@@ -116,18 +116,20 @@ export default function EndpointStatusCard({
               <Select
                 labelId="refresh-select"
                 label="Refresh"
-                value={refreshSec ?? ""}
+                value={refreshSec ? String(refreshSec) : ""}
                 displayEmpty
                 renderValue={(selected) =>
-                  selected === "" ? "Не обновлять" : String(selected)
+                  typeof selected === "string" && selected === ""
+                    ? "Не обновлять"
+                    : String(selected)
                 }
                 onChange={(event) => onRefreshChange(String(event.target.value))}
               >
                 <MenuItem value="">Не обновлять</MenuItem>
-                <MenuItem value={15}>15 секунд</MenuItem>
-                <MenuItem value={30}>30 секунд</MenuItem>
-                <MenuItem value={60}>1 минута</MenuItem>
-                <MenuItem value={300}>5 минут</MenuItem>
+                <MenuItem value="15">15 секунд</MenuItem>
+                <MenuItem value="30">30 секунд</MenuItem>
+                <MenuItem value="60">1 минута</MenuItem>
+                <MenuItem value="300">5 минут</MenuItem>
               </Select>
             </FormControl>
             <IconButton
