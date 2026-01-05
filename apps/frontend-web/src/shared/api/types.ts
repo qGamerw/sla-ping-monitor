@@ -66,3 +66,13 @@ export interface EndpointSummaryResponse {
   lastSuccess?: boolean | null;
   windowStats?: StatsResponse;
 }
+
+export interface FolderResponse {
+  name: string;
+  endpoints: string[];
+}
+
+export interface NodesResponse {
+  cpuUsed: string;
+  ramUsed: string;
+}

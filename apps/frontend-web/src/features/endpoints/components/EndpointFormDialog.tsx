@@ -11,6 +11,7 @@ import {
   DialogTitle,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Stack,
   Switch,
   TextField,
@@ -49,6 +50,18 @@ const defaultDraft: EndpointDraft = {
   tags: [],
 };
 
+const httpMethods = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+  "TRACE",
+  "CONNECT",
+];
+
 export default function EndpointFormDialog({
   open,
   availableTags,
@@ -66,40 +79,79 @@ export default function EndpointFormDialog({
       value,
     })),
   );
+  const [timeoutInput, setTimeoutInput] = React.useState(
+    String(defaultDraft.timeoutMs),
+  );
+  const [intervalInput, setIntervalInput] = React.useState(
+    String(defaultDraft.intervalSec),
+  );
   const [expectedStatusInput, setExpectedStatusInput] = React.useState(
     defaultDraft.expectedStatus.join(", "),
   );
+  const prevOpenRef = React.useRef(open);
+  const isFormValid =
+    draft.name.trim().length > 0 &&
+    draft.url.trim().length > 0 &&
+    draft.method.trim().length > 0 &&
+    timeoutInput.trim().length > 0 &&
+    intervalInput.trim().length > 0 &&
+    expectedStatusInput
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean).length > 0;
 
   React.useEffect(() => {
-    if (initial) {
-      setDraft({
-        name: initial.name,
-        url: initial.url,
-        method: initial.method,
-        headers: initial.headers ?? {},
-        timeoutMs: initial.timeoutMs,
-        expectedStatus: initial.expectedStatus,
-        intervalSec: initial.intervalSec,
-        enabled: initial.enabled,
-        tags: initial.tags ?? [],
-      });
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    if (open && !wasOpen) {
+      if (initial) {
+        setDraft({
+          name: initial.name,
+          url: initial.url,
+          method: initial.method,
+          headers: initial.headers ?? {},
+          timeoutMs: initial.timeoutMs,
+          expectedStatus: initial.expectedStatus,
+          intervalSec: initial.intervalSec,
+          enabled: initial.enabled,
+          tags: initial.tags ?? [],
+        });
+        setHeaders(
+          Object.entries(initial.headers ?? {}).map(([key, value]) => ({
+            key,
+            value,
+          })),
+        );
+        setTimeoutInput(String(initial.timeoutMs));
+        setIntervalInput(String(initial.intervalSec));
+        setExpectedStatusInput(initial.expectedStatus.join(", "));
+        return;
+      }
+      setDraft(defaultDraft);
       setHeaders(
-        Object.entries(initial.headers ?? {}).map(([key, value]) => ({
+        Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
           key,
           value,
         })),
       );
-      setExpectedStatusInput(initial.expectedStatus.join(", "));
-      return;
+      setTimeoutInput(String(defaultDraft.timeoutMs));
+      setIntervalInput(String(defaultDraft.intervalSec));
+      setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
     }
-    setDraft(defaultDraft);
-    setHeaders(
-      Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
-        key,
-        value,
-      })),
-    );
-    setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
+
+    if (!open) {
+      setDraft(defaultDraft);
+      setHeaders(
+        Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      );
+      setTimeoutInput(String(defaultDraft.timeoutMs));
+      setIntervalInput(String(defaultDraft.intervalSec));
+      setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
+    }
   }, [initial, open]);
 
   const handleChange = (field: keyof EndpointDraft) =>
@@ -121,12 +173,16 @@ export default function EndpointFormDialog({
       }
       return acc;
     }, {});
+    const timeoutMs = Number.parseInt(timeoutInput, 10);
+    const intervalSec = Number.parseInt(intervalInput, 10);
     const expectedStatus = expectedStatusInput
       .split(",")
       .map((value) => Number.parseInt(value.trim(), 10))
       .filter((value) => Number.isFinite(value));
     onSave({
       ...draft,
+      timeoutMs: Number.isFinite(timeoutMs) ? Math.max(0, timeoutMs) : 0,
+      intervalSec: Number.isFinite(intervalSec) ? Math.max(0, intervalSec) : 0,
       headers: Object.keys(headerMap).length > 0 ? headerMap : null,
       expectedStatus,
       tags: draft.tags.length > 0 ? draft.tags : null,
@@ -145,6 +201,7 @@ export default function EndpointFormDialog({
               label="Название"
               value={draft.name}
               onChange={handleChange("name")}
+              required
               fullWidth
             />
           )}
@@ -152,14 +209,23 @@ export default function EndpointFormDialog({
             label="URL"
             value={draft.url}
             onChange={handleChange("url")}
+            required
             fullWidth
           />
           <TextField
             label="Метод"
             value={draft.method}
             onChange={handleChange("method")}
+            select
+            required
             fullWidth
-          />
+          >
+            {httpMethods.map((method) => (
+              <MenuItem key={method} value={method}>
+                {method}
+              </MenuItem>
+            ))}
+          </TextField>
           <Stack spacing={1}>
             <Typography variant="subtitle2">Headers</Typography>
             {headers.map((header, index) => (
@@ -216,32 +282,37 @@ export default function EndpointFormDialog({
           <TextField
             label="Timeout (ms)"
             type="number"
-            value={draft.timeoutMs}
-            onChange={(event) =>
-              setDraft((prev) => ({
-                ...prev,
-                timeoutMs: Number(event.target.value),
-              }))
-            }
+            value={timeoutInput}
+            onChange={(event) => {
+              const value = event.target.value;
+              setTimeoutInput(value);
+            }}
+            inputProps={{ min: 0 }}
+            required
             fullWidth
           />
           <TextField
             label="Expected status"
             value={expectedStatusInput}
-            onChange={(event) => setExpectedStatusInput(event.target.value)}
+            onChange={(event) =>
+              setExpectedStatusInput(
+                event.target.value.replace(/[^\d,\s]/g, ""),
+              )
+            }
             helperText="Введите статусы через запятую, например 200, 399"
+            required
             fullWidth
           />
           <TextField
             label="Интервал (сек)"
             type="number"
-            value={draft.intervalSec}
-            onChange={(event) =>
-              setDraft((prev) => ({
-                ...prev,
-                intervalSec: Number(event.target.value),
-              }))
-            }
+            value={intervalInput}
+            onChange={(event) => {
+              const value = event.target.value;
+              setIntervalInput(value);
+            }}
+            inputProps={{ min: 0 }}
+            required
             fullWidth
           />
           <Autocomplete
@@ -276,7 +347,7 @@ export default function EndpointFormDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Отмена</Button>
-        <Button onClick={handleSave} variant="contained">
+        <Button onClick={handleSave} variant="contained" disabled={!isFormValid}>
           Сохранить
         </Button>
       </DialogActions>

@@ -1,8 +1,10 @@
 "use client";
 
 import { Alert, Card, CardContent, Container, Divider, Stack, Typography } from "@mui/material";
+import FolderFormDialog from "../components/FolderFormDialog";
 import EndpointFormDialog from "../components/EndpointFormDialog";
 import EndpointsHeader from "./EndpointsHeader";
+import EndpointsFoldersCard from "./EndpointsFoldersCard";
 import EndpointsMetricsCard from "./EndpointsMetricsCard";
 import EndpointsTable from "./EndpointsTable";
 import EndpointsToolbar from "./EndpointsToolbar";
@@ -12,6 +14,12 @@ export default function EndpointsListView() {
   const {
     windowValue,
     refreshSec,
+    endpoints,
+    folders,
+    nodesInfo,
+    selectedFolder,
+    folderDialogOpen,
+    editingFolder,
     filteredEndpoints,
     availableTags,
     dialogOpen,
@@ -34,11 +42,17 @@ export default function EndpointsListView() {
     handleToggle,
     handleDuplicate,
     handleTagsChange,
+    handleFolderSelect,
+    handleFolderCreate,
+    handleFolderEdit,
+    handleFolderSave,
+    handleFolderDelete,
     handleSelectAll,
     handleSelectRow,
     handleBulkToggle,
     handleBulkDelete,
     setDialogOpen,
+    setFolderDialogOpen,
   } = useEndpointsList();
 
   return (
@@ -51,6 +65,7 @@ export default function EndpointsListView() {
         <EndpointsMetricsCard
           windowValue={windowValue}
           refreshSec={refreshSec}
+          nodesInfo={nodesInfo}
           onWindowChange={handleWindowChange}
           onRefreshChange={handleRefreshChange}
           onRefreshNow={handleRefreshNow}
@@ -58,6 +73,14 @@ export default function EndpointsListView() {
 
         <Card>
           <CardContent>
+            <EndpointsFoldersCard
+              folders={folders.map((folder) => folder.name)}
+              selected={selectedFolder}
+              onSelect={handleFolderSelect}
+              onCreate={handleFolderCreate}
+              onEdit={handleFolderEdit}
+            />
+            <Divider sx={{ my: 2 }} />
             <EndpointsToolbar
               query={query}
               totalCount={filteredEndpoints.length}
@@ -99,6 +122,17 @@ export default function EndpointsListView() {
         initial={editing}
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
+      />
+      <FolderFormDialog
+        open={folderDialogOpen}
+        endpoints={endpoints}
+        folderNames={folders.map((folder) => folder.name)}
+        folder={editingFolder}
+        onClose={() => {
+          setFolderDialogOpen(false);
+        }}
+        onSave={handleFolderSave}
+        onDelete={editingFolder ? handleFolderDelete : undefined}
       />
     </Container>
   );

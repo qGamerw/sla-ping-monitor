@@ -27,12 +27,11 @@ import com.acme.slamonitor.business.service.impl.BackendNodeServiceImpl
 import com.acme.slamonitor.business.service.impl.EndpointServiceImpl
 import com.acme.slamonitor.business.service.impl.FolderServiceImpl
 import com.acme.slamonitor.business.service.impl.StatsServiceImpl
-import com.acme.slamonitor.persistence.BackendNodeRepository
+import com.acme.slamonitor.configuration.post_processor.EndpointClientLoggingBeanPostProcessor
 import com.acme.slamonitor.persistence.CheckResultRepository
 import com.acme.slamonitor.persistence.EndpointRepository
 import com.acme.slamonitor.persistence.FolderRepository
 import com.acme.slamonitor.persistence.util.JpaIoTransactionalLogging
-import com.acme.slamonitor.post_processor.EndpointClientLoggingBeanPostProcessor
 import com.acme.slamonitor.scope.AppScope
 import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
 import io.ktor.client.HttpClient
@@ -128,9 +127,7 @@ val beanPostProcessor = beans {
 
 val serviceBeans = beans {
     bean<BackendNodeService> {
-        BackendNodeServiceImpl(
-            backendNodeRepository = ref<BackendNodeRepository>()
-        )
+        BackendNodeServiceImpl()
     }
 
     bean<EndpointService> {

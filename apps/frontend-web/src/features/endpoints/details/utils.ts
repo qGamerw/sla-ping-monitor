@@ -22,8 +22,6 @@ export const mapStatus = (
   return "DOWN";
 };
 
-export const formatChartTime = (value: string) => dayjs(value).format("HH:mm");
-
 export const buildBuckets = (
   checks: CheckResultResponse[],
   from: dayjs.Dayjs,
@@ -52,7 +50,7 @@ export const buildBuckets = (
   });
 
   return buckets.map((bucket) => ({
-    time: formatChartTime(bucket.start.toISOString()),
+    time: bucket.start.toISOString(),
     latency:
       bucket.latencies.length > 0
         ? bucket.latencies.reduce((sum, value) => sum + value, 0) /

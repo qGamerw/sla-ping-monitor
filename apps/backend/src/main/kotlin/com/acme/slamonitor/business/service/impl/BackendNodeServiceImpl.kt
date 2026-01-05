@@ -1,40 +1,29 @@
 package com.acme.slamonitor.business.service.impl
 
-import com.acme.slamonitor.api.dto.request.NodeHeartbeatRequest
+import com.acme.slamonitor.api.dto.response.BackendNodeResponse
 import com.acme.slamonitor.business.service.BackendNodeService
-import com.acme.slamonitor.persistence.BackendNodeRepository
-import com.acme.slamonitor.persistence.domain.BackendNodeEntity
-import java.time.Instant
+import com.sun.management.OperatingSystemMXBean
+import java.lang.management.ManagementFactory
 
-/**
- * Реализация сервиса backend-нод на основе репозитория.
- */
-open class BackendNodeServiceImpl(
-    private val backendNodeRepository: BackendNodeRepository
-) : BackendNodeService {
+open class BackendNodeServiceImpl : BackendNodeService {
 
-    /**
-     * Создает или обновляет запись ноды по heartbeat.
-     */
-    override fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity {
-        val now = Instant.now()
-        val existing = backendNodeRepository.findById(request.nodeId).orElse(null)
-        val entity = existing?.apply {
-            baseUrl = request.baseUrl
-            lastHeartbeatAt = now
-            meta = request.meta
-        } ?: BackendNodeEntity(
-            nodeId = request.nodeId,
-            baseUrl = request.baseUrl,
-            startedAt = request.startedAt,
-            lastHeartbeatAt = now,
-            meta = request.meta
+    override fun getNode(): BackendNodeResponse {
+        val os = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean::class.java)
+
+        val proc = os.processCpuLoad
+            .takeIf { it >= 0.0 }
+            ?.times(5000.0) ?: 0.0
+
+        return BackendNodeResponse(
+            cpuUsed = "%.2f".format(proc),
+            ramUsed = "%.2f".format(heapUsage())
         )
-        return backendNodeRepository.save(entity)
     }
 
-    /**
-     * Возвращает все зарегистрированные ноды.
-     */
-    override fun getNodes(): List<BackendNodeEntity> = backendNodeRepository.findAll()
+}
+
+private fun heapUsage(): Double {
+    val heap = ManagementFactory.getMemoryMXBean().heapMemoryUsage
+    val max = heap.max
+    return if (max > 0) heap.used.toDouble() / max * 100.0 else 0.0
 }
