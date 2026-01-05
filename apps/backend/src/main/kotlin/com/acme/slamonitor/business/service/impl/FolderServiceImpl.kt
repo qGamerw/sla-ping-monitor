@@ -24,7 +24,16 @@ open class FolderServiceImpl(
     }
 
     override fun update(request: FolderRequest): Message {
-        val entity = FolderEntity(name = request.name, endpoints = request.endpoints)
+        val entity = runBlocking {
+            jpaAsyncIoWorker.executeWithTransactionalSupplier("Find folder: ${request.name}") {
+                folderRepository.findByName(request.name)
+            }
+        } ?: FolderEntity(name = request.name)
+
+        request.endpoints.takeIf { !it.isNullOrEmpty() }?.also {
+            entity.endpoints.clear()
+            entity.endpoints.addAll(it)
+        }
 
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Update endpoint ${request.name}") {
             folderRepository.save(entity)
@@ -34,7 +43,11 @@ open class FolderServiceImpl(
     }
 
     override fun delete(request: FolderRequest): Message {
-        val entity = FolderEntity(name = request.name, endpoints = request.endpoints)
+        val entity = runBlocking {
+            jpaAsyncIoWorker.executeWithTransactionalSupplier("Find folder: ${request.name}") {
+                folderRepository.findByName(request.name)
+            }
+        } ?: return Message("Folder not found")
 
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Delete endpoint: ${request.name}") {
             folderRepository.delete(entity)

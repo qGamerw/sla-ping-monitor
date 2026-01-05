@@ -16,5 +16,5 @@ class FolderEntity(
     val name: String,
 
     @Column(name = "endpoints")
-    val endpoints: List<UUID>? = mutableListOf()
+    val endpoints: MutableList<UUID> = mutableListOf()
 )

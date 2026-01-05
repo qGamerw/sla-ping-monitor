@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 /**
  * Репозиторий для отображения папок на фронте.
  */
-interface FolderRepository : JpaRepository<FolderEntity, String>
+interface FolderRepository : JpaRepository<FolderEntity, String> {
+    fun findByName(name: String): FolderEntity?
+}
