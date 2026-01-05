@@ -9,6 +9,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 
 /**
  * JPA-сущность результата проверки эндпоинта.
@@ -19,6 +21,7 @@ class CheckResultEntity(
     @Id
     val id: UUID = UUID.randomUUID(),
 
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "endpoint_id", nullable = false)
     val endpoint: EndpointEntity,

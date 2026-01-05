@@ -11,13 +11,14 @@ import org.springframework.context.SmartLifecycle
 /**
  * Управляет жизненным циклом планировщика через SmartLifecycle.
  */
-open class SchedulerLifecycle(
+open class SchedulerSmartLifecycle(
     private val scheduler: InMemoryScheduler,
     private val rootDispatcher: CoroutineDispatcher,
     private val refreshLoopDispatcher: CoroutineDispatcher,
     private val feedLoopDispatcher: CoroutineDispatcher,
     private val workerDispatcher: CoroutineDispatcher,
     private val flusherLoopDispatcher: CoroutineDispatcher,
+    private val cleanDataLoopDispatcher: CoroutineDispatcher,
     private val appScope: AppScope
 ) : SmartLifecycle {
 
@@ -35,7 +36,8 @@ open class SchedulerLifecycle(
                 refreshLoopDispatcher,
                 feedLoopDispatcher,
                 workerDispatcher,
-                flusherLoopDispatcher
+                flusherLoopDispatcher,
+                cleanDataLoopDispatcher
             )
         }
     }

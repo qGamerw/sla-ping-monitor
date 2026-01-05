@@ -53,11 +53,9 @@ open class EndpointServiceImpl(
     override fun update(id: UUID, request: EndpointRequest): Message {
         val entity = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoint $id") {
-                endpointRepository.findById(id)
+                endpointRepository.findByIdAndIsDeletedFalse(id)
             }
-        }.orElseThrow {
-            EndpointException("No endpoint found with id $id")
-        }
+        } ?: throw EndpointException("No endpoint found with id $id")
 
         entity.name = request.name
         entity.url = request.url
@@ -67,6 +65,7 @@ open class EndpointServiceImpl(
         entity.expectedStatus = request.expectedStatus ?: entity.expectedStatus
         entity.intervalSec = request.intervalSec ?: entity.intervalSec
         entity.enabled = request.enabled ?: entity.enabled
+        entity.tags = request.tags
 
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Update endpoint $id") {
             endpointRepository.save(entity)
@@ -83,7 +82,7 @@ open class EndpointServiceImpl(
             endpointRepository.deleteById(id)
         }
 
-        return Message("Deletion process is queued for id: $id")
+        return Message("Deletion process is queued for endpoint id: $id")
     }
 
     /**
@@ -92,11 +91,10 @@ open class EndpointServiceImpl(
     override fun getEndpoint(id: UUID): EndpointResponse {
         val entity = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoint: $id") {
-                endpointRepository.findById(id)
+                endpointRepository.findByIdAndIsDeletedFalse(id)
             }
-        }.orElseThrow {
-            EndpointException("No endpoint found with id $id")
-        }
+        } ?: throw EndpointException("No endpoint found with id $id")
+
         return MAPPER.toResponse(entity)
     }
 
@@ -106,7 +104,7 @@ open class EndpointServiceImpl(
     override fun getEndpoints(): List<EndpointResponse> {
         val entities = runBlocking {
             jpaAsyncIoWorker.executeWithTransactionalSupplier("Get endpoints") {
-                endpointRepository.findAll()
+                endpointRepository.findAllByIsDeletedFalse()
             }
         }
         return MAPPER.toResponses(entities)
