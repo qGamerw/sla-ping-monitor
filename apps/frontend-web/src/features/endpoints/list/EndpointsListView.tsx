@@ -71,16 +71,13 @@ export default function EndpointsListView() {
 
         <Card>
           <CardContent>
-            <Stack spacing={2}>
-              <Typography variant="h6">Endpoints</Typography>
-              <EndpointsFoldersCard
-                folders={folders.map((folder) => folder.name)}
-                selected={selectedFolder}
-                onSelect={handleFolderSelect}
-                onCreate={handleFolderCreate}
-                onEdit={handleFolderEdit}
-              />
-            </Stack>
+            <EndpointsFoldersCard
+              folders={folders.map((folder) => folder.name)}
+              selected={selectedFolder}
+              onSelect={handleFolderSelect}
+              onCreate={handleFolderCreate}
+              onEdit={handleFolderEdit}
+            />
             <Divider sx={{ my: 2 }} />
             <EndpointsToolbar
               query={query}
