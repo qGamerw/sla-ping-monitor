@@ -88,6 +88,7 @@ export default function EndpointFormDialog({
   const [expectedStatusInput, setExpectedStatusInput] = React.useState(
     defaultDraft.expectedStatus.join(", "),
   );
+  const prevOpenRef = React.useRef(open);
   const isFormValid =
     draft.name.trim().length > 0 &&
     draft.url.trim().length > 0 &&
@@ -100,39 +101,57 @@ export default function EndpointFormDialog({
       .filter(Boolean).length > 0;
 
   React.useEffect(() => {
-    if (initial) {
-      setDraft({
-        name: initial.name,
-        url: initial.url,
-        method: initial.method,
-        headers: initial.headers ?? {},
-        timeoutMs: initial.timeoutMs,
-        expectedStatus: initial.expectedStatus,
-        intervalSec: initial.intervalSec,
-        enabled: initial.enabled,
-        tags: initial.tags ?? [],
-      });
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    if (open && !wasOpen) {
+      if (initial) {
+        setDraft({
+          name: initial.name,
+          url: initial.url,
+          method: initial.method,
+          headers: initial.headers ?? {},
+          timeoutMs: initial.timeoutMs,
+          expectedStatus: initial.expectedStatus,
+          intervalSec: initial.intervalSec,
+          enabled: initial.enabled,
+          tags: initial.tags ?? [],
+        });
+        setHeaders(
+          Object.entries(initial.headers ?? {}).map(([key, value]) => ({
+            key,
+            value,
+          })),
+        );
+        setTimeoutInput(String(initial.timeoutMs));
+        setIntervalInput(String(initial.intervalSec));
+        setExpectedStatusInput(initial.expectedStatus.join(", "));
+        return;
+      }
+      setDraft(defaultDraft);
       setHeaders(
-        Object.entries(initial.headers ?? {}).map(([key, value]) => ({
+        Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
           key,
           value,
         })),
       );
-      setTimeoutInput(String(initial.timeoutMs));
-      setIntervalInput(String(initial.intervalSec));
-      setExpectedStatusInput(initial.expectedStatus.join(", "));
-      return;
+      setTimeoutInput(String(defaultDraft.timeoutMs));
+      setIntervalInput(String(defaultDraft.intervalSec));
+      setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
     }
-    setDraft(defaultDraft);
-    setHeaders(
-      Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
-        key,
-        value,
-      })),
-    );
-    setTimeoutInput(String(defaultDraft.timeoutMs));
-    setIntervalInput(String(defaultDraft.intervalSec));
-    setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
+
+    if (!open) {
+      setDraft(defaultDraft);
+      setHeaders(
+        Object.entries(defaultDraft.headers ?? {}).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      );
+      setTimeoutInput(String(defaultDraft.timeoutMs));
+      setIntervalInput(String(defaultDraft.intervalSec));
+      setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
+    }
   }, [initial, open]);
 
   const handleChange = (field: keyof EndpointDraft) =>
