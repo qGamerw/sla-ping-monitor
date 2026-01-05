@@ -11,6 +11,7 @@ import {
   DialogTitle,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Stack,
   Switch,
   TextField,
@@ -49,6 +50,18 @@ const defaultDraft: EndpointDraft = {
   tags: [],
 };
 
+const httpMethods = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+  "TRACE",
+  "CONNECT",
+];
+
 export default function EndpointFormDialog({
   open,
   availableTags,
@@ -65,6 +78,12 @@ export default function EndpointFormDialog({
       key,
       value,
     })),
+  );
+  const [timeoutInput, setTimeoutInput] = React.useState(
+    String(defaultDraft.timeoutMs),
+  );
+  const [intervalInput, setIntervalInput] = React.useState(
+    String(defaultDraft.intervalSec),
   );
   const [expectedStatusInput, setExpectedStatusInput] = React.useState(
     defaultDraft.expectedStatus.join(", "),
@@ -89,6 +108,8 @@ export default function EndpointFormDialog({
           value,
         })),
       );
+      setTimeoutInput(String(initial.timeoutMs));
+      setIntervalInput(String(initial.intervalSec));
       setExpectedStatusInput(initial.expectedStatus.join(", "));
       return;
     }
@@ -99,6 +120,8 @@ export default function EndpointFormDialog({
         value,
       })),
     );
+    setTimeoutInput(String(defaultDraft.timeoutMs));
+    setIntervalInput(String(defaultDraft.intervalSec));
     setExpectedStatusInput(defaultDraft.expectedStatus.join(", "));
   }, [initial, open]);
 
@@ -121,12 +144,16 @@ export default function EndpointFormDialog({
       }
       return acc;
     }, {});
+    const timeoutMs = Number.parseInt(timeoutInput, 10);
+    const intervalSec = Number.parseInt(intervalInput, 10);
     const expectedStatus = expectedStatusInput
       .split(",")
       .map((value) => Number.parseInt(value.trim(), 10))
       .filter((value) => Number.isFinite(value));
     onSave({
       ...draft,
+      timeoutMs: Number.isFinite(timeoutMs) ? Math.max(0, timeoutMs) : 0,
+      intervalSec: Number.isFinite(intervalSec) ? Math.max(0, intervalSec) : 0,
       headers: Object.keys(headerMap).length > 0 ? headerMap : null,
       expectedStatus,
       tags: draft.tags.length > 0 ? draft.tags : null,
@@ -158,8 +185,15 @@ export default function EndpointFormDialog({
             label="Метод"
             value={draft.method}
             onChange={handleChange("method")}
+            select
             fullWidth
-          />
+          >
+            {httpMethods.map((method) => (
+              <MenuItem key={method} value={method}>
+                {method}
+              </MenuItem>
+            ))}
+          </TextField>
           <Stack spacing={1}>
             <Typography variant="subtitle2">Headers</Typography>
             {headers.map((header, index) => (
@@ -216,32 +250,34 @@ export default function EndpointFormDialog({
           <TextField
             label="Timeout (ms)"
             type="number"
-            value={draft.timeoutMs}
-            onChange={(event) =>
-              setDraft((prev) => ({
-                ...prev,
-                timeoutMs: Number(event.target.value),
-              }))
-            }
+            value={timeoutInput}
+            onChange={(event) => {
+              const value = event.target.value;
+              setTimeoutInput(value);
+            }}
+            inputProps={{ min: 0 }}
             fullWidth
           />
           <TextField
             label="Expected status"
             value={expectedStatusInput}
-            onChange={(event) => setExpectedStatusInput(event.target.value)}
+            onChange={(event) =>
+              setExpectedStatusInput(
+                event.target.value.replace(/[^\d,\s]/g, ""),
+              )
+            }
             helperText="Введите статусы через запятую, например 200, 399"
             fullWidth
           />
           <TextField
             label="Интервал (сек)"
             type="number"
-            value={draft.intervalSec}
-            onChange={(event) =>
-              setDraft((prev) => ({
-                ...prev,
-                intervalSec: Number(event.target.value),
-              }))
-            }
+            value={intervalInput}
+            onChange={(event) => {
+              const value = event.target.value;
+              setIntervalInput(value);
+            }}
+            inputProps={{ min: 0 }}
             fullWidth
           />
           <Autocomplete
