@@ -35,6 +35,10 @@ open class FolderServiceImpl(
             entity.endpoints.addAll(it)
         }
 
+        request.newName.takeIf { !it.isNullOrBlank() }?.also {
+            entity.name = it
+        }
+
         jpaAsyncIoWorker.executeWithTransactionalConsumer("Update endpoint ${request.name}") {
             folderRepository.save(entity)
         }

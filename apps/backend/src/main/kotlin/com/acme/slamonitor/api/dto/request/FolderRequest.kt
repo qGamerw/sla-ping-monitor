@@ -4,5 +4,6 @@ import java.util.UUID
 
 data class FolderRequest(
     val name: String,
-    val endpoints: List<UUID>? = null
+    val endpoints: List<UUID>? = null,
+    val newName: String? = null,
 )

@@ -13,7 +13,7 @@ class FolderEntity(
     val id: UUID = UUID.randomUUID(),
 
     @Column(name = "name", nullable = false, unique = true)
-    val name: String,
+    var name: String,
 
     @Column(name = "endpoints")
     val endpoints: MutableList<UUID> = mutableListOf()
