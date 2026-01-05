@@ -69,6 +69,7 @@ export default function EndpointsTable({
     mouseY: number;
     endpoint: EndpointResponse;
   } | null>(null);
+  const refreshQuery = refreshSec ? `&refresh=${refreshSec}` : "";
 
   const handleTagInputChange = (id: string, value: string) => {
     setTagInputs((prev) => ({ ...prev, [id]: value }));
@@ -141,7 +142,7 @@ export default function EndpointsTable({
         <TableBody>
           {endpoints.map((endpoint) => {
             const metrics = endpoint.summary?.windowStats;
-            const refreshQuery = refreshSec ? `&refresh=${refreshSec}` : "";
+            const endpointLink = `/endpoints/${endpoint.id}?window=${windowValue}${refreshQuery}`;
             const isTagInputOpen = tagInputOpen[endpoint.id] ?? false;
             return (
               <TableRow
@@ -161,7 +162,7 @@ export default function EndpointsTable({
                       <Typography
                         variant="subtitle2"
                         component={Link}
-                        href={`/endpoints/${endpoint.id}`}
+                        href={endpointLink}
                         color="primary"
                         sx={{ textDecoration: "none" }}
                       >
@@ -243,7 +244,7 @@ export default function EndpointsTable({
                     <Tooltip title="Открыть">
                       <IconButton
                         component={Link}
-                        href={`/endpoints/${endpoint.id}?window=${windowValue}${refreshQuery}`}
+                        href={endpointLink}
                         size="small"
                       >
                         <OpenInNewIcon fontSize="small" />
@@ -284,7 +285,7 @@ export default function EndpointsTable({
           <>
             <MenuItem
               component={Link}
-              href={`/endpoints/${contextMenu.endpoint.id}`}
+              href={`/endpoints/${contextMenu.endpoint.id}?window=${windowValue}${refreshQuery}`}
               onClick={handleCloseContextMenu}
             >
               Перейти к метрике

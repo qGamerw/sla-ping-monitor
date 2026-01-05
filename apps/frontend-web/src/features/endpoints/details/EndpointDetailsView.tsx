@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Box, Container, Typography } from "@mui/material";
+import { Alert, Box, Container, Stack, Typography } from "@mui/material";
 import EndpointFormDialog from "../components/EndpointFormDialog";
 import EndpointCharts from "./EndpointCharts";
 import EndpointHeader from "./EndpointHeader";
@@ -56,36 +56,40 @@ export default function EndpointDetailsView() {
 
         {error && <Alert severity="error">{error}</Alert>}
 
-        {endpoint && (
-          <EndpointStatusCard
-            stats={stats}
-            enabled={endpoint.enabled}
-            lastCheckAt={checks.length > 0 ? checks[checks.length - 1].finishedAt : null}
-            windowValue={windowValue}
-            refreshSec={refreshSec}
-            onWindowChange={handleWindowChange}
-            onRefreshChange={handleRefreshChange}
-            onRefreshNow={handleRefreshNow}
-            onToggle={handleToggle}
+        <Stack spacing={3} sx={{ mt: 3 }}>
+          {endpoint && (
+            <EndpointStatusCard
+              stats={stats}
+              enabled={endpoint.enabled}
+              lastCheckAt={
+                checks.length > 0 ? checks[checks.length - 1].finishedAt : null
+              }
+              windowValue={windowValue}
+              refreshSec={refreshSec}
+              onWindowChange={handleWindowChange}
+              onRefreshChange={handleRefreshChange}
+              onRefreshNow={handleRefreshNow}
+              onToggle={handleToggle}
+            />
+          )}
+
+          <EndpointCharts
+            latencyPoints={bucketedData.map((point) => ({
+              time: point.time,
+              value: point.latency,
+            }))}
+            errorPoints={bucketedData.map((point) => ({
+              time: point.time,
+              value: point.errors,
+            }))}
           />
-        )}
 
-        <EndpointCharts
-          latencyPoints={bucketedData.map((point) => ({
-            time: point.time,
-            value: point.latency,
-          }))}
-          errorPoints={bucketedData.map((point) => ({
-            time: point.time,
-            value: point.errors,
-          }))}
-        />
-
-        {loading && (
-          <Typography variant="body2" color="text.secondary">
-            Загрузка данных...
-          </Typography>
-        )}
+          {loading && (
+            <Typography variant="body2" color="text.secondary">
+              Загрузка данных...
+            </Typography>
+          )}
+        </Stack>
       </Container>
 
       {endpoint && (

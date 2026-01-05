@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { BarChart, LineChart } from "@mui/x-charts";
 import { Card, CardContent, Divider, Stack, Typography } from "@mui/material";
 
@@ -14,6 +15,8 @@ export default function EndpointCharts({
     value === null ? "—" : `${value.toFixed(0)} ms`;
   const formatErrors = (value: number | null) =>
     value === null ? "—" : `${value.toFixed(0)} errors`;
+  const formatTime = (value: string | number) =>
+    dayjs(value).format("HH:mm:ss");
 
   return (
     <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
@@ -36,6 +39,7 @@ export default function EndpointCharts({
                 {
                   data: latencyPoints.map((point) => point.time),
                   scaleType: "band",
+                  valueFormatter: formatTime,
                 },
               ]}
               tooltip={{ trigger: "axis" }}
@@ -62,6 +66,7 @@ export default function EndpointCharts({
                 {
                   data: errorPoints.map((point) => point.time),
                   scaleType: "band",
+                  valueFormatter: formatTime,
                 },
               ]}
               tooltip={{ trigger: "axis" }}
