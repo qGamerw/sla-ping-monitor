@@ -68,6 +68,10 @@ export default function EndpointsMetricsCard({
                 labelId="refresh-select"
                 label="Refresh"
                 value={refreshSec ?? ""}
+                displayEmpty
+                renderValue={(selected) =>
+                  selected === "" ? "Не обновлять" : String(selected)
+                }
                 onChange={(event) =>
                   onRefreshChange(String(event.target.value))
                 }
