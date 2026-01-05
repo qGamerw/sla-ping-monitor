@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Alert,
-  Card,
-  CardContent,
-  Container,
-  Divider,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
-import SettingsIcon from "@mui/icons-material/Settings";
+import { Alert, Card, CardContent, Container, Divider, Stack, Typography } from "@mui/material";
 import FolderFormDialog from "../components/FolderFormDialog";
 import EndpointFormDialog from "../components/EndpointFormDialog";
 import EndpointsHeader from "./EndpointsHeader";
@@ -82,32 +72,13 @@ export default function EndpointsListView() {
         <Card>
           <CardContent>
             <Stack spacing={2}>
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                spacing={2}
-                alignItems={{ xs: "flex-start", md: "center" }}
-                justifyContent="space-between"
-              >
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Typography variant="h6">
-                    {selectedFolder === "all" ? "Все endpoints" : selectedFolder}
-                  </Typography>
-                  {selectedFolder !== "all" && (
-                    <IconButton
-                      size="small"
-                      aria-label="Редактировать папку"
-                      onClick={handleFolderEdit}
-                    >
-                      <SettingsIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </Stack>
-              </Stack>
+              <Typography variant="h6">Endpoints</Typography>
               <EndpointsFoldersCard
                 folders={folders.map((folder) => folder.name)}
                 selected={selectedFolder}
                 onSelect={handleFolderSelect}
                 onCreate={handleFolderCreate}
+                onEdit={handleFolderEdit}
               />
             </Stack>
             <Divider sx={{ my: 2 }} />

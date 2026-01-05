@@ -351,8 +351,19 @@ export const useEndpointsList = () => {
           endpoints: draft.endpoints,
           newName: draft.name,
         });
+        setFolders((prev) =>
+          prev.map((folder) =>
+            folder.name === editingFolder.name
+              ? { name: draft.name, endpoints: draft.endpoints }
+              : folder,
+          ),
+        );
       } else {
         await createFolder({ name: draft.name });
+        setFolders((prev) => [
+          ...prev.filter((folder) => folder.name !== draft.name),
+          { name: draft.name, endpoints: draft.endpoints },
+        ]);
         if (draft.endpoints.length > 0) {
           await updateFolder({
             name: draft.name,
