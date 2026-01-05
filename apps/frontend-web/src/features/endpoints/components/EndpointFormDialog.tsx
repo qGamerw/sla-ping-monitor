@@ -88,6 +88,16 @@ export default function EndpointFormDialog({
   const [expectedStatusInput, setExpectedStatusInput] = React.useState(
     defaultDraft.expectedStatus.join(", "),
   );
+  const isFormValid =
+    draft.name.trim().length > 0 &&
+    draft.url.trim().length > 0 &&
+    draft.method.trim().length > 0 &&
+    timeoutInput.trim().length > 0 &&
+    intervalInput.trim().length > 0 &&
+    expectedStatusInput
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean).length > 0;
 
   React.useEffect(() => {
     if (initial) {
@@ -172,6 +182,7 @@ export default function EndpointFormDialog({
               label="Название"
               value={draft.name}
               onChange={handleChange("name")}
+              required
               fullWidth
             />
           )}
@@ -179,6 +190,7 @@ export default function EndpointFormDialog({
             label="URL"
             value={draft.url}
             onChange={handleChange("url")}
+            required
             fullWidth
           />
           <TextField
@@ -186,6 +198,7 @@ export default function EndpointFormDialog({
             value={draft.method}
             onChange={handleChange("method")}
             select
+            required
             fullWidth
           >
             {httpMethods.map((method) => (
@@ -256,6 +269,7 @@ export default function EndpointFormDialog({
               setTimeoutInput(value);
             }}
             inputProps={{ min: 0 }}
+            required
             fullWidth
           />
           <TextField
@@ -267,6 +281,7 @@ export default function EndpointFormDialog({
               )
             }
             helperText="Введите статусы через запятую, например 200, 399"
+            required
             fullWidth
           />
           <TextField
@@ -278,6 +293,7 @@ export default function EndpointFormDialog({
               setIntervalInput(value);
             }}
             inputProps={{ min: 0 }}
+            required
             fullWidth
           />
           <Autocomplete
@@ -312,7 +328,7 @@ export default function EndpointFormDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Отмена</Button>
-        <Button onClick={handleSave} variant="contained">
+        <Button onClick={handleSave} variant="contained" disabled={!isFormValid}>
           Сохранить
         </Button>
       </DialogActions>
