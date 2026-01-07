@@ -47,6 +47,20 @@ depending on how the service is exposed.
 * Frontend: http://localhost:3000
 * Backend: http://localhost:8080
 
+## Frontend tunneling (ngrok)
+
+Use ngrok to expose the frontend to another network:
+
+```bash
+./deploy/tunnel-frontend.sh
+```
+
+You can override the port if needed:
+
+```bash
+FRONTEND_PORT=3000 ./deploy/tunnel-frontend.sh
+```
+
 ## Cleanup
 
 ```bash
