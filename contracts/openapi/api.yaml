@@ -158,57 +158,92 @@ paths:
                 $ref: '#/components/schemas/BaseResponseEndpointSummaryList'
         '500':
           $ref: '#/components/responses/InternalError'
-  /api/nodes/heartbeat:
-    post:
-      summary: Принять heartbeat от backend-ноды
-      tags: [Nodes]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NodeHeartbeatRequest'
-      responses:
-        '200':
-          description: Heartbeat принят
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseResponseBackendNode'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /api/nodes:
     get:
-      summary: Получить список backend-нод
+      summary: Получить метрики текущей backend-ноды
       tags: [Nodes]
-      responses:
-        '200':
-          description: Список нод
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseResponseBackendNodeList'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /api/nodes/{nodeId}/metrics:
-    get:
-      summary: Получить метрики backend-ноды (заглушка)
-      tags: [Nodes]
-      parameters:
-        - name: nodeId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Метрики backend-ноды
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BackendNodeMetrics'
+                $ref: '#/components/schemas/BaseResponseBackendNode'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/folders:
+    post:
+      summary: Создать папку эндпоинтов
+      tags: [Folders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderRequest'
+      responses:
+        '200':
+          description: Папка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      summary: Обновить папку эндпоинтов
+      tags: [Folders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderRequest'
+      responses:
+        '200':
+          description: Папка обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      summary: Удалить папку эндпоинтов
+      tags: [Folders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FolderRequest'
+      responses:
+        '200':
+          description: Папка удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      summary: Получить список папок эндпоинтов
+      tags: [Folders]
+      responses:
+        '200':
+          description: Список папок
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseFolderList'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
     EndpointId:
@@ -308,7 +343,7 @@ components:
           $ref: '#/components/schemas/BackendNodeResponse'
         error:
           $ref: '#/components/schemas/ApiError'
-    BaseResponseBackendNodeList:
+    BaseResponseFolderList:
       type: object
       required: [susses]
       properties:
@@ -317,7 +352,7 @@ components:
         body:
           type: array
           items:
-            $ref: '#/components/schemas/BackendNodeResponse'
+            $ref: '#/components/schemas/FolderResponse'
         error:
           $ref: '#/components/schemas/ApiError'
     BaseResponseError:
@@ -564,48 +599,38 @@ components:
     BackendNodeResponse:
       type: object
       properties:
-        nodeId:
+        cpuUsed:
           type: string
-        baseUrl:
+        ramUsed:
           type: string
-        startedAt:
-          type: string
-          format: date-time
-        lastHeartbeatAt:
-          type: string
-          format: date-time
-        meta:
-          type: object
-          additionalProperties: {}
-          nullable: true
-      required: [nodeId, baseUrl, startedAt, lastHeartbeatAt]
-    NodeHeartbeatRequest:
+      required: [cpuUsed, ramUsed]
+    FolderRequest:
       type: object
       properties:
-        nodeId:
+        name:
           type: string
-        baseUrl:
-          type: string
-        startedAt:
-          type: string
-          format: date-time
-        meta:
-          type: object
-          additionalProperties: {}
+        endpoints:
+          type: array
+          items:
+            type: string
+            format: uuid
           nullable: true
-      required: [nodeId, baseUrl, startedAt]
-    BackendNodeMetrics:
+        newName:
+          type: string
+          nullable: true
+      required: [name]
+    FolderResponse:
       type: object
       properties:
-        nodeId:
+        id:
           type: string
-        queueSize:
-          type: integer
-          format: int32
-        activeChecks:
-          type: integer
-          format: int32
-        checksPerMin:
-          type: integer
-          format: int32
-      required: [nodeId, queueSize, activeChecks, checksPerMin]
+          format: uuid
+        name:
+          type: string
+        endpoints:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+      required: [id, name]

@@ -5,6 +5,9 @@ import com.acme.slamonitor.business.service.BackendNodeService
 import com.sun.management.OperatingSystemMXBean
 import java.lang.management.ManagementFactory
 
+/**
+ * Реализация сервиса метрик текущего backend-узла.
+ */
 open class BackendNodeServiceImpl : BackendNodeService {
 
     override fun getNode(): BackendNodeResponse {
@@ -22,6 +25,9 @@ open class BackendNodeServiceImpl : BackendNodeService {
 
 }
 
+/**
+ * Рассчитывает процент использования heap-памяти.
+ */
 private fun heapUsage(): Double {
     val heap = ManagementFactory.getMemoryMXBean().heapMemoryUsage
     val max = heap.max

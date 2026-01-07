@@ -10,6 +10,9 @@ import com.acme.slamonitor.persistence.mapper.FolderMapper.Companion.MAPPER
 import com.acme.slamonitor.scope.JpaIoWorkerCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 
+/**
+ * Реализация сервиса управления папками эндпоинтов.
+ */
 open class FolderServiceImpl(
     private val folderRepository: FolderRepository,
     private val jpaAsyncIoWorker: JpaIoWorkerCoroutineDispatcher

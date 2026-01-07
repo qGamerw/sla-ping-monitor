@@ -6,6 +6,9 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.util.UUID
 
+/**
+ * Сущность папки эндпоинтов.
+ */
 @Entity
 @Table(name = "folders")
 class FolderEntity(
