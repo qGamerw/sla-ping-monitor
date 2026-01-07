@@ -14,6 +14,18 @@ docker build -f deploy/frontend/Dockerfile \
   -t sla-ping-monitor-frontend:local .
 ```
 
+## Build and deploy script
+
+```bash
+./deploy/deploy.sh
+```
+
+You can override the API base URL:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 ./deploy/deploy.sh
+```
+
 ## Deploy
 
 ```bash
