@@ -16,6 +16,10 @@ import { windowOptions } from "../../../shared/api/windows";
 interface EndpointsMetricsCardProps {
   windowValue: MetricsWindow;
   refreshSec: number | null;
+  nodesInfo: {
+    cpuUsed: string;
+    ramUsed: string;
+  } | null;
   onWindowChange: (value: MetricsWindow) => void;
   onRefreshChange: (value: string) => void;
   onRefreshNow: () => void;
@@ -24,6 +28,7 @@ interface EndpointsMetricsCardProps {
 export default function EndpointsMetricsCard({
   windowValue,
   refreshSec,
+  nodesInfo,
   onWindowChange,
   onRefreshChange,
   onRefreshNow,
@@ -43,6 +48,17 @@ export default function EndpointsMetricsCard({
               Все значения p50/p95/p99 и error rate рассчитаны для выбранного
               окна.
             </Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                Активные поды - 0
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Процент использования CPU: {nodesInfo?.cpuUsed ?? "—"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Процент использования RAM: {nodesInfo?.ramUsed ?? "—"}
+              </Typography>
+            </Stack>
           </Stack>
           <Stack direction="row" spacing={2} alignItems="center">
             <FormControl size="small" sx={{ minWidth: 140 }}>

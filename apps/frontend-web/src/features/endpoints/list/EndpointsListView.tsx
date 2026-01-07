@@ -16,6 +16,7 @@ export default function EndpointsListView() {
     refreshSec,
     endpoints,
     folders,
+    nodesInfo,
     selectedFolder,
     folderDialogOpen,
     editingFolder,
@@ -64,6 +65,7 @@ export default function EndpointsListView() {
         <EndpointsMetricsCard
           windowValue={windowValue}
           refreshSec={refreshSec}
+          nodesInfo={nodesInfo}
           onWindowChange={handleWindowChange}
           onRefreshChange={handleRefreshChange}
           onRefreshNow={handleRefreshNow}

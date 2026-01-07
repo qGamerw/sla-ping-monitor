@@ -71,3 +71,8 @@ export interface FolderResponse {
   name: string;
   endpoints: string[];
 }
+
+export interface NodesResponse {
+  cpuUsed: string;
+  ramUsed: string;
+}

@@ -15,11 +15,13 @@ import {
   fetchFolders,
   updateFolder,
 } from "../../../shared/api/folders";
+import { fetchNodes } from "../../../shared/api/nodes";
 import type {
   EndpointRequest,
   EndpointResponse,
   FolderResponse,
   MetricsWindow,
+  NodesResponse,
 } from "../../../shared/api/types";
 import { windowOptions, windowToSeconds } from "../../../shared/api/windows";
 import type { EndpointRow } from "./types";
@@ -48,6 +50,7 @@ export const useEndpointsList = () => {
   );
   const [endpoints, setEndpoints] = React.useState<EndpointRow[]>([]);
   const [folders, setFolders] = React.useState<FolderResponse[]>([]);
+  const [nodesInfo, setNodesInfo] = React.useState<NodesResponse | null>(null);
   const [selectedFolder, setSelectedFolder] = React.useState("all");
   const [folderDialogOpen, setFolderDialogOpen] = React.useState(false);
   const [editingFolder, setEditingFolder] = React.useState<FolderResponse | null>(
@@ -90,12 +93,13 @@ export const useEndpointsList = () => {
     setLoading(true);
     try {
       const windowSec = windowToSeconds(windowValue);
-      const [endpointsResult, summaryResult, foldersResult] =
+      const [endpointsResult, summaryResult, foldersResult, nodesResult] =
         await Promise.allSettled([
-        fetchEndpoints(),
-        fetchEndpointSummary(windowSec),
-        fetchFolders(),
-      ]);
+          fetchEndpoints(),
+          fetchEndpointSummary(windowSec),
+          fetchFolders(),
+          fetchNodes(),
+        ]);
 
       const errorMessages: string[] = [];
 
@@ -146,6 +150,12 @@ export const useEndpointsList = () => {
         setFolders(foldersResult.value);
       } else {
         errorMessages.push("Не удалось загрузить список папок.");
+      }
+
+      if (nodesResult.status === "fulfilled") {
+        setNodesInfo(nodesResult.value);
+      } else {
+        errorMessages.push("Не удалось загрузить данные по подам.");
       }
 
       setError(errorMessages.length > 0 ? errorMessages.join(" ") : null);
@@ -453,6 +463,7 @@ export const useEndpointsList = () => {
     refreshSec,
     endpoints,
     folders,
+    nodesInfo,
     selectedFolder,
     folderDialogOpen,
     editingFolder,
