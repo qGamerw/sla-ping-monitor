@@ -358,6 +358,7 @@ export const useEndpointsList = () => {
               : folder,
           ),
         );
+        await loadData();
       } else {
         await createFolder({ name: draft.name });
         setFolders((prev) => [
@@ -371,11 +372,11 @@ export const useEndpointsList = () => {
             newName: draft.name,
           });
         }
+        await loadData();
       }
       setFolderDialogOpen(false);
       setEditingFolder(null);
       setSelectedFolder(draft.name);
-      await loadData();
     } catch (err) {
       setError("Не удалось сохранить папку.");
     }

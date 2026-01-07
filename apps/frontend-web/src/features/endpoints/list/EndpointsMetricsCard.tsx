@@ -63,7 +63,9 @@ export default function EndpointsMetricsCard({
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel id="refresh-select">Refresh</InputLabel>
+              <InputLabel id="refresh-select" shrink>
+                Refresh
+              </InputLabel>
               <Select
                 labelId="refresh-select"
                 label="Refresh"
