@@ -32,4 +32,5 @@ docker build -f deploy/frontend/Dockerfile \
   -t "$FRONTEND_IMAGE" .
 
 echo "Deploying to Kubernetes"
+kubectl delete namespace sla-ping-monitor --ignore-not-found
 kubectl apply -k deploy/k8s
