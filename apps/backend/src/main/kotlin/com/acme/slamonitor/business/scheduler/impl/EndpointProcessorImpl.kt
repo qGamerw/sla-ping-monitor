@@ -8,6 +8,7 @@ import com.acme.slamonitor.business.scheduler.dto.EndpointBad
 import com.acme.slamonitor.business.scheduler.dto.EndpointOk
 import com.acme.slamonitor.business.scheduler.dto.EndpointResult
 import com.acme.slamonitor.business.scheduler.dto.EndpointView
+import com.acme.slamonitor.business.url.LocalhostUrlRewriter
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
 import java.time.Instant
@@ -17,7 +18,8 @@ import org.slf4j.LoggerFactory
  * Выполняет проверку эндпоинта через HTTP-клиент.
  */
 open class EndpointProcessorImpl(
-    private val client: EndpointClient
+    private val client: EndpointClient,
+    private val localhostUrlRewriter: LocalhostUrlRewriter
 ) : EndpointProcessor {
     /**
      * Делает запрос и формирует результат проверки.
@@ -26,8 +28,9 @@ open class EndpointProcessorImpl(
         val startNs = System.nanoTime()
 
         return try {
+            val resolvedUrl = localhostUrlRewriter.rewrite(endpoint.url)
             val request = RuntimeRequest(
-                endpoint.url,
+                resolvedUrl,
                 HttpMethod.parse(endpoint.method),
                 endpoint.headers ?: emptyMap(),
                 EndpointTimeouts(

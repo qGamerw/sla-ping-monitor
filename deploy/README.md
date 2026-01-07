@@ -42,6 +42,10 @@ The backend pod uses host networking to reach services running on your machine.
 Use `http://localhost:<port>` or `http://host.docker.internal:<port>` in endpoint URLs
 depending on how the service is exposed.
 
+If you need to rewrite `localhost` for endpoint checks, set `SLA_MONITOR_LOCALHOST_HOST`
+on the backend deployment (default in the manifest is `host.docker.internal`).
+Update it if your host is reachable via a different name or IP.
+
 ## Access services
 
 * Frontend: http://localhost:3000
