@@ -27,7 +27,6 @@ import com.acme.slamonitor.business.service.impl.BackendNodeServiceImpl
 import com.acme.slamonitor.business.service.impl.EndpointServiceImpl
 import com.acme.slamonitor.business.service.impl.FolderServiceImpl
 import com.acme.slamonitor.business.service.impl.StatsServiceImpl
-import com.acme.slamonitor.business.url.LocalhostUrlRewriter
 import com.acme.slamonitor.configuration.post_processor.EndpointClientLoggingBeanPostProcessor
 import com.acme.slamonitor.persistence.CheckResultRepository
 import com.acme.slamonitor.persistence.EndpointRepository
@@ -54,7 +53,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.SmartLifecycle
 import org.springframework.context.support.beans
 import org.springframework.core.Ordered
-import org.springframework.core.env.Environment
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
@@ -183,17 +181,9 @@ val serviceBeans = beans {
         )
     }
 
-    bean {
-        val env = ref<Environment>()
-        LocalhostUrlRewriter(
-            replacementHost = env.getProperty("sla.monitor.localhost-host")
-        )
-    }
-
     bean<EndpointProcessor> {
         EndpointProcessorImpl(
-            client = ref<EndpointClient>(),
-            localhostUrlRewriter = ref()
+            client = ref<EndpointClient>()
         )
     }
 

@@ -28,8 +28,6 @@ spec:
               value: postgres
             - name: SPRING_DATASOURCE_PASSWORD
               value: postgres
-            - name: SLA_MONITOR_LOCALHOST_HOST
-              value: host.docker.internal
 ---
 apiVersion: v1
 kind: Service
