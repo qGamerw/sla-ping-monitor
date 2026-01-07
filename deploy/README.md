@@ -38,6 +38,10 @@ POSTGRES_IMAGE=postgres:16 ./deploy/deploy.sh
 kubectl apply -k deploy/k8s
 ```
 
+The backend pod uses host networking to reach services running on your machine.
+Use `http://localhost:<port>` or `http://host.docker.internal:<port>` in endpoint URLs
+depending on how the service is exposed.
+
 ## Access services
 
 * Frontend: http://localhost:3000

@@ -13,6 +13,8 @@ spec:
       labels:
         app: backend
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: backend
           image: sla-ping-monitor-backend:local
