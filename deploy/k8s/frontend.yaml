@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: sla-ping-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: sla-ping-monitor-frontend:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: http://localhost:8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: sla-ping-monitor
+spec:
+  selector:
+    app: frontend
+  type: LoadBalancer
+  ports:
+    - port: 3000
+      targetPort: 3000
