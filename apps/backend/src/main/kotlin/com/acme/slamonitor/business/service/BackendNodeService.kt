@@ -1,7 +1,6 @@
 package com.acme.slamonitor.business.service
 
-import com.acme.slamonitor.api.dto.request.NodeHeartbeatRequest
-import com.acme.slamonitor.persistence.domain.BackendNodeEntity
+import com.acme.slamonitor.api.dto.response.BackendNodeResponse
 
 /**
  * Сервис управления backend-нодами.
@@ -11,10 +10,6 @@ interface BackendNodeService {
     /**
      * Обновляет информацию о ноде по heartbeat.
      */
-    fun heartbeat(request: NodeHeartbeatRequest): BackendNodeEntity
+    fun getNode(): BackendNodeResponse
 
-    /**
-     * Возвращает список активных нод.
-     */
-    fun getNodes(): List<BackendNodeEntity>
 }

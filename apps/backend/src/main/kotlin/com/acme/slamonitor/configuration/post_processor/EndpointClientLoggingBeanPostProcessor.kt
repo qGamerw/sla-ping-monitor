@@ -1,4 +1,4 @@
-package com.acme.slamonitor.post_processor
+package com.acme.slamonitor.configuration.post_processor
 
 import com.acme.slamonitor.business.client.EndpointClient
 import com.acme.slamonitor.business.client.impl.LoggingEndpointClient
