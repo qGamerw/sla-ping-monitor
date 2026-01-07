@@ -7,6 +7,16 @@ BACKEND_IMAGE="sla-ping-monitor-backend:local"
 FRONTEND_IMAGE="sla-ping-monitor-frontend:local"
 API_BASE_URL="${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}"
 
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Error: docker is not installed or not in PATH. Install Docker Desktop and ensure 'docker' is available." >&2
+  exit 1
+fi
+
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "Error: kubectl is not installed or not in PATH. Install kubectl and try again." >&2
+  exit 1
+fi
+
 cd "$ROOT_DIR"
 
 echo "Building backend image: $BACKEND_IMAGE"
