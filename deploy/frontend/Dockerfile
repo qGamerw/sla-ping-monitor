@@ -8,6 +8,7 @@ COPY apps/frontend-web/package.json /app/
 RUN npm install
 
 COPY apps/frontend-web/ /app
+RUN mkdir -p public
 RUN npm run build
 
 FROM node:24-alpine
