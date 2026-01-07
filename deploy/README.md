@@ -26,6 +26,12 @@ You can override the API base URL:
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 ./deploy/deploy.sh
 ```
 
+The script pulls the database image before deploying. You can override it if needed:
+
+```bash
+POSTGRES_IMAGE=postgres:16 ./deploy/deploy.sh
+```
+
 ## Deploy
 
 ```bash
