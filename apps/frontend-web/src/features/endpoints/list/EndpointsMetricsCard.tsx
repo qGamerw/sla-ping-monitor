@@ -50,7 +50,7 @@ export default function EndpointsMetricsCard({
             </Typography>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Typography variant="body2" color="text.secondary">
-                Активные поды - 0
+                Активные поды - 1
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Процент использования CPU: {nodesInfo?.cpuUsed ?? "—"}
