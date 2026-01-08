@@ -44,8 +44,20 @@ kubectl apply -k deploy/k8s
 
 ## Доступ к сервисам
 
+### Через port-forward (localhost)
+
+```bash
+kubectl -n sla-ping-monitor port-forward service/frontend 3000:3000
+kubectl -n sla-ping-monitor port-forward service/backend 8080:8080
+```
+
 * Frontend: http://localhost:3000
 * Backend: http://localhost:8080
+
+### Через NodePort (IP ноды)
+
+* Frontend: http://<NODE_IP>:30080
+* Backend: http://<NODE_IP>:30081
 
 ## Очистка
 
