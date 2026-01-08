@@ -50,25 +50,23 @@
   - `meta` (JSON)
 
 ---
-## 🔌 API-сервисы и методы
-- **/api/endpoints**
+## 🔌 Основные эндпоинты
+- **Эндпоинты мониторинга**
   - `POST /api/endpoints` — создать эндпоинт.
   - `PUT /api/endpoints/{id}` — обновить эндпоинт.
   - `DELETE /api/endpoints/{id}` — удалить эндпоинт.
   - `GET /api/endpoints/{id}` — получить эндпоинт.
   - `GET /api/endpoints` — список эндпоинтов.
-- **/api/endpoints/{id}/stats**
+- **Статистика и проверки**
   - `GET /api/endpoints/{id}/stats?windowSec=...` — статистика по окну.
-- **/api/endpoints/{id}/checks**
   - `GET /api/endpoints/{id}/checks?from=...&to=...` — список проверок.
-- **/api/endpoints/summary**
   - `GET /api/endpoints/summary?windowSec=...` — краткое резюме по всем эндпоинтам.
-- **/api/folders**
+- **Папки**
   - `POST /api/folders` — создать папку.
   - `PUT /api/folders` — обновить папку.
   - `DELETE /api/folders` — удалить папку.
   - `GET /api/folders` — список папок.
-- **/api/nodes**
+- **Backend-ноды**
   - `GET /api/nodes` — данные backend-ноды.
 - **Actuator**
   - `GET /actuator/health`
