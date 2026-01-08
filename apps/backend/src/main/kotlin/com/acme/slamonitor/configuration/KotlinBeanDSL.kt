@@ -57,6 +57,9 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
+/**
+ * Регистрация контроллеров и общих web-конфигураций.
+ */
 val controllerBeans = beans {
     bean(::GlobalExceptionHandler)
     bean(::EndpointController)
@@ -83,6 +86,9 @@ val controllerBeans = beans {
     }
 }
 
+/**
+ * Настройки CORS для web-слоя.
+ */
 val corsMvcBeans = beans {
     bean<WebMvcConfigurer> {
         object : WebMvcConfigurer {
@@ -96,6 +102,9 @@ val corsMvcBeans = beans {
     }
 }
 
+/**
+ * Клиентские зависимости на базе Ktor.
+ */
 val ktorBeans = beans {
     bean<HttpClient>(destroyMethodName = "close") {
         HttpClient(CIO) {
@@ -121,10 +130,16 @@ val ktorBeans = beans {
     }
 }
 
+/**
+ * Bean-постпроцессоры приложения.
+ */
 val beanPostProcessor = beans {
     bean(::EndpointClientLoggingBeanPostProcessor)
 }
 
+/**
+ * Доменные сервисы и фоновые компоненты.
+ */
 val serviceBeans = beans {
     bean<BackendNodeService> {
         BackendNodeServiceImpl()
@@ -200,10 +215,16 @@ val serviceBeans = beans {
     }
 }
 
+/**
+ * AOP-аспекты приложения.
+ */
 val aspectBean = beans {
     bean(::TransactionalLoggingAspect)
 }
 
+/**
+ * Пул потоков и диспетчеры корутин.
+ */
 val dispatchersBeans = beans {
     bean<ExecutorService>(
         name = ROOT_THREAD_EXECUTOR_BEAN_NAME,
