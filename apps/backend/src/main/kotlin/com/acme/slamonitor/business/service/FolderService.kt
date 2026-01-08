@@ -4,6 +4,9 @@ import com.acme.slamonitor.api.dto.Message
 import com.acme.slamonitor.api.dto.request.FolderRequest
 import com.acme.slamonitor.api.dto.response.FolderResponse
 
+/**
+ * Сервис управления папками эндпоинтов.
+ */
 interface FolderService {
 
     fun create(request: FolderRequest): Message
@@ -13,5 +16,4 @@ interface FolderService {
     fun delete(request: FolderRequest): Message
 
     fun getFolders(): List<FolderResponse>
-
 }
