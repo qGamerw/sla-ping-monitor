@@ -1,11 +1,11 @@
-# Docker Desktop Kubernetes deployment (local)
+# Деплой в Docker Desktop Kubernetes (локально)
 
-These manifests and Dockerfiles are intended for local deployment to Docker Desktop Kubernetes
-without pushing images to a registry.
+Эти манифесты и Dockerfile предназначены для локального деплоя в Docker Desktop Kubernetes
+без публикации образов в registry.
 
-## Build images
+## Сборка образов
 
-From the repository root:
+Из корня репозитория:
 
 ```bash
 docker build -f deploy/backend/Dockerfile -t sla-ping-monitor-backend:local .
@@ -14,54 +14,54 @@ docker build -f deploy/frontend/Dockerfile \
   -t sla-ping-monitor-frontend:local .
 ```
 
-## Build and deploy script
+## Скрипт сборки и деплоя
 
 ```bash
 ./deploy/deploy.sh
 ```
 
-You can override the API base URL:
+Можно переопределить базовый URL для API:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 ./deploy/deploy.sh
 ```
 
-The script pulls the database image before deploying. You can override it if needed:
+Скрипт заранее подтягивает образ базы данных. При необходимости можно переопределить его:
 
 ```bash
 POSTGRES_IMAGE=postgres:16 ./deploy/deploy.sh
 ```
 
-## Deploy
+## Деплой
 
 ```bash
 kubectl apply -k deploy/k8s
 ```
 
-The backend pod uses host networking to reach services running on your machine.
-Use `http://localhost:<port>` or `http://host.docker.internal:<port>` in endpoint URLs
-depending on how the service is exposed.
+Бэкенд-под использует host networking для доступа к сервисам на вашей машине.
+В URL эндпоинтов используйте `http://localhost:<port>` или `http://host.docker.internal:<port>`
+в зависимости от способа публикации сервиса.
 
-## Access services
+## Доступ к сервисам
 
 * Frontend: http://localhost:3000
 * Backend: http://localhost:8080
 
-## Frontend tunneling (ngrok)
+## Туннелирование фронтенда (ngrok)
 
-Use ngrok to expose the frontend to another network:
+Используйте ngrok, чтобы открыть доступ к фронтенду из другой сети:
 
 ```bash
 ./deploy/tunnel-frontend.sh
 ```
 
-You can override the port if needed:
+При необходимости можно переопределить порт:
 
 ```bash
 FRONTEND_PORT=3000 ./deploy/tunnel-frontend.sh
 ```
 
-## Cleanup
+## Очистка
 
 ```bash
 kubectl delete -k deploy/k8s
