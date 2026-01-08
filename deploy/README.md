@@ -47,20 +47,6 @@ kubectl apply -k deploy/k8s
 * Frontend: http://localhost:3000
 * Backend: http://localhost:8080
 
-## Туннелирование фронтенда (ngrok)
-
-Используйте ngrok, чтобы открыть доступ к фронтенду из другой сети:
-
-```bash
-./deploy/tunnel-frontend.sh
-```
-
-При необходимости можно переопределить порт:
-
-```bash
-FRONTEND_PORT=3000 ./deploy/tunnel-frontend.sh
-```
-
 ## Очистка
 
 ```bash
