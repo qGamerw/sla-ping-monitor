@@ -21,7 +21,7 @@ spec:
             - containerPort: 3000
           env:
             - name: NEXT_PUBLIC_API_BASE_URL
-              value: http://194.87.82.168:30081
+              value: http://localhost:8080
 ---
 apiVersion: v1
 kind: Service
@@ -31,8 +31,7 @@ metadata:
 spec:
   selector:
     app: frontend
-  type: NodePort
+  type: LoadBalancer
   ports:
     - port: 3000
       targetPort: 3000
-      nodePort: 30080
