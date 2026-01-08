@@ -25,6 +25,28 @@ SLA Ping Monitor — это сервис для мониторинга дост�
 - `contracts` — контракты/спецификации (заготовка).
 - `deploy` — материалы для деплоя (заготовка).
 
+## Контекстная диаграмма
+
+```mermaid
+flowchart LR
+    Users[Пользователи/клиенты] -->|REST API| Backend[SLA Ping Monitor (Spring Boot)]
+    Backend -->|CRUD/метрики| Database[(PostgreSQL)]
+    Backend -->|HTTP-проверки| Targets[HTTP эндпоинты]
+    Backend -->|Health/Metrics| Observability[Actuator/Monitoring]
+```
+
+## Компонентная диаграмма
+
+```mermaid
+flowchart TB
+    API[REST API Controllers] --> Services[Business Services]
+    Services --> Scheduler[In-Memory Scheduler]
+    Scheduler --> Client[Endpoint HTTP Client]
+    Services --> Repos[JPA Repositories]
+    Repos --> DB[(PostgreSQL)]
+    Scheduler --> DB
+```
+
 ## Требования
 
 - JDK 21
